@@ -1,6 +1,5 @@
 # Article 9 - Semantic Search and Information Retrieval with Transformers
 
-![ChatGPT Image Jul 16, 2025, 07_55_37 PM.png](attachment:19762ab2-a274-4223-ac96-31b703969f3e:ChatGPT_Image_Jul_16_2025_07_55_37_PM.png)
 
 # From Keywords to Neural Understanding: The Transformer Revolution in Search
 
@@ -72,31 +71,39 @@ This builds on my previous exploration of custom data workflows in [Custom Data 
 
 ### Setting Up Your Environment with Python 3.12.9
 
-```bash
-# Using pyenv (recommended for Python version management)
-pyenv install 3.12.9
-pyenv local 3.12.9
+To get started with semantic search, we need to set up our Python environment and import the necessary libraries. This example demonstrates the initial setup from the interactive tutorial notebook:
 
-# Verify Python version
-python --version  # Should show Python 3.12.9
+```python
+# Set environment variable to avoid tokenizers warning
+import os
+os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
-# Install required packages with poetry
-poetry new semantic-search-project
-cd semantic-search-project
-poetry env use 3.12.9
-poetry add sentence-transformers numpy faiss-cpu rank-bm25 chromadb openai
+# Import necessary libraries
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sentence_transformers import SentenceTransformer, util
+from rank_bm25 import BM25Okapi
+import warnings
+warnings.filterwarnings('ignore')
 
-# Or use mini-conda
-conda create -n semantic-search python=3.12.9
-conda activate semantic-search
-pip install sentence-transformers numpy faiss-cpu rank-bm25 chromadb openai
+# Set up plotting style
+plt.style.use('seaborn-v0_8-darkgrid')
+sns.set_palette("husl")
 
-# Or use pip with pyenv
-pyenv install 3.12.9
-pyenv local 3.12.9
-pip install sentence-transformers numpy faiss-cpu rank-bm25 chromadb openai
-
+print("Libraries imported successfully!")
+print(f"NumPy version: {np.__version__}")
+print(f"Pandas version: {pd.__version__}")
 ```
+
+**Step-by-Step Explanation:**
+
+1. **Environment Setup**: Set tokenizers parallelism to avoid warnings in notebook environments
+2. **Import Core Libraries**: Load essential packages for numerical computation, data manipulation, and visualization
+3. **Import Search Components**: Load sentence transformers for semantic search and BM25 for keyword search
+4. **Configure Visualization**: Set up consistent plotting style for clear visual outputs
+5. **Verify Installation**: Print versions to ensure proper setup
 
 ### Keyword Search vs. Semantic Search: A Modern Comparison
 
@@ -112,53 +119,90 @@ This example will show:
 The code sample uses a realistic FAQ scenario where a user's query about forgotten login credentials should match documents about password recovery, despite not sharing the same keywords:
 
 ```python
-# Example FAQ documents
+# Define our FAQ documents
 faqs = [
     "How can I reset my password?",
     "What are the steps for account recovery?",
     "How do I request a refund?",
-    "Information about our privacy policy."
+    "Information about our privacy policy.",
+    "How to update billing information?",
+    "Contact customer support for help.",
+    "Two-factor authentication setup guide.",
+    "Troubleshooting login issues."
 ]
 
-# User query
+# User query that doesn't match keywords exactly
 query = "I forgot my login credentials"
 
-# --- Keyword Search ---
-# Find FAQs containing any keyword from the query (exact match)
-keywords = set(query.lower().split())
-keyword_matches = [faq for faq in faqs if keywords & set(faq.lower().split())]
-print("Keyword Search Results:", keyword_matches)
+print(f"User Query: '{query}'")
+print("\n" + "="*50 + "\n")
 
-# --- Semantic Search ---
-# Use a transformer model to embed both the FAQs and the query
-from sentence_transformers import SentenceTransformer, util
-import numpy as np
+# Keyword Search Implementation
+def keyword_search(query, documents):
+    """Simple keyword matching search"""
+    query_words = set(query.lower().split())
+    matches = []
+    
+    for doc in documents:
+        doc_words = set(doc.lower().split())
+        if query_words & doc_words:  # Intersection
+            matches.append(doc)
+    
+    return matches
 
-model = SentenceTransformer('all-MiniLM-L6-v2')  # Current, lightweight model
-
-faq_embeddings = model.encode(faqs, convert_to_numpy=True)  # Embeddings as vectors
-query_embedding = model.encode([query], convert_to_numpy=True)[0]
-
-# Cosine similarity measures semantic closeness between query and each FAQ
-cosine_scores = util.cos_sim(query_embedding, faq_embeddings)[0].cpu().numpy()
-
-# Rank FAQs by similarity (highest score first)
-top_idx = np.argsort(-cosine_scores)
-semantic_matches = [faqs[i] for i in top_idx[:2]]
-print("Semantic Search Results:", semantic_matches)
-
-# Note: For production-scale search, use a vector database (see below) for efficiency.
-
+# Perform keyword search
+keyword_results = keyword_search(query, faqs)
+print("🔍 KEYWORD SEARCH RESULTS:")
+if keyword_results:
+    for i, result in enumerate(keyword_results, 1):
+        print(f"  {i}. {result}")
+else:
+    print("  No matches found! ❌")
+    print("  (No shared words between query and documents)")
 ```
 
 **Step-by-Step Explanation:**
 
 1. **Define FAQs and Query**: Create sample documents and a user question that doesn't match keywords exactly
 2. **Keyword Search**: Split query into words, find FAQs sharing any word—misses relevant answers when wording differs
-3. **Load Transformer Model**: Initialize sentence transformer that creates meaning-rich embeddings
-4. **Generate Embeddings**: Convert FAQs and query into dense vectors capturing semantic essence
-5. **Calculate Similarity**: Use cosine similarity to measure meaning closeness between vectors
-6. **Rank Results**: Sort FAQs by similarity score—most relevant surfaces first
+3. **Check Intersection**: Use set intersection to find common words between query and documents
+4. **Display Results**: Show which documents matched, or indicate no matches found
+5. **Highlight Limitation**: Demonstrate how exact word matching fails for natural language queries
+
+Now let's see how semantic search handles the same query:
+
+```python
+# Semantic Search Implementation
+def semantic_search(query, documents, model, top_k=3):
+    """Semantic search using sentence transformers"""
+    # Encode query and documents
+    query_embedding = model.encode(query, convert_to_numpy=True)
+    doc_embeddings = model.encode(documents, convert_to_numpy=True)
+    
+    # Calculate cosine similarities
+    similarities = util.cos_sim(query_embedding, doc_embeddings)[0]
+    
+    # Get top-k results
+    top_results = similarities.argsort(descending=True)[:top_k]
+    
+    results = [(documents[idx], float(similarities[idx])) for idx in top_results]
+    return results
+
+# Perform semantic search
+semantic_results = semantic_search(query, faqs, model)
+print("\n🧠 SEMANTIC SEARCH RESULTS:")
+for i, (doc, score) in enumerate(semantic_results, 1):
+    print(f"  {i}. {doc}")
+    print(f"     (Similarity score: {score:.3f})")
+```
+
+**Step-by-Step Explanation:**
+
+1. **Generate Embeddings**: Convert query and documents into dense vectors capturing semantic essence
+2. **Calculate Similarity**: Use cosine similarity to measure meaning closeness between vectors
+3. **Rank Results**: Sort FAQs by similarity score—most relevant surfaces first
+4. **Return Top Matches**: Extract the most semantically similar documents
+5. **Display with Scores**: Show results with confidence scores indicating semantic similarity
 
 Notice how keyword search returns nothing (no shared words), while semantic search correctly identifies password/account recovery FAQs as relevant. That's the power of understanding **meaning**.
 
@@ -226,43 +270,28 @@ Embeddings capture context and word relationships. We compare meanings using **c
 ### Comparing Keyword and Semantic Search Results
 
 ```python
-# Ensure Python 3.12.9 environment
 import sys
-print(f"Python version: {sys.version}")  # Verify 3.12.9
+print(f"Python version: {sys.version}")
 
-# Example query and candidate documents
-query = "How do I reset my password?"
-documents = [
-    "Account recovery steps",
-    "Password reset instructions",
-    "Update your profile information"
-]
-
-# Keyword search: match if 'password' is present
-keyword_matches = [doc for doc in documents if "password" in doc.lower()]
-print("Keyword Search Results:", keyword_matches)
-
-# Semantic search: use a sentence transformer for meaning
-from sentence_transformers import SentenceTransformer, util
-# You can also try newer embedding models, such as 'BAAI/bge-base-en-v1.5' or 'intfloat/e5-base-v2'
+# Load the sentence transformer model
+print("\nLoading sentence transformer model...")
 model = SentenceTransformer('all-MiniLM-L6-v2')
-query_embedding = model.encode(query)
-doc_embeddings = model.encode(documents)
-scores = util.cos_sim(query_embedding, doc_embeddings)[0]
-top_idx = scores.argmax().item()
-print("Semantic Search Top Result:", documents[top_idx])
+print("Model loaded successfully!")
 
+# Test the model with a simple example
+test_sentence = "Hello, world!"
+test_embedding = model.encode(test_sentence)
+print(f"\nTest embedding shape: {test_embedding.shape}")
+print(f"Embedding dimension: {len(test_embedding)}")
 ```
 
 **Step-by-Step Explanation:**
 
 1. **Verify Python Version**: Ensure we're using Python 3.12.9 for consistency
-2. **Define Query and Documents**: Create search scenario with varied phrasings
-3. **Keyword Search**: Only finds "Password reset instructions"—ignores relevant "Account recovery"
-4. **Load Transformer**: Initialize model that creates semantic embeddings
-5. **Generate Embeddings**: Convert text into meaning vectors
-6. **Calculate Similarity**: Find document with closest meaning to query
-7. **Surface Best Match**: Semantic search correctly identifies most relevant document
+2. **Load Transformer**: Initialize model that creates semantic embeddings
+3. **Test Embedding**: Generate a sample embedding to verify model is working
+4. **Check Dimensions**: Confirm embeddings are 384-dimensional vectors
+5. **Ready for Search**: Model is prepared to encode documents and queries
 
 Try modifying the query to "forgot login details"—watch how results shift. This demonstrates semantic search uncovering relevance that keyword search misses entirely.
 
@@ -277,39 +306,83 @@ Modern engines combine keyword and semantic search (hybrid search) maximizing pr
 After discussing keyword vs. semantic search, let's explore how to combine both approaches for optimal results. Hybrid search leverages the precision of keyword matching with the understanding of semantic search.
 
 ```python
-from rank_bm25 import BM25Okapi
-from sentence_transformers import SentenceTransformer, util
-import numpy as np
+# Import our hybrid search implementation
+import sys
+sys.path.append('../src')
+from hybrid_search import HybridSearchEngine
 
-# Documents and query
-documents = ["Account recovery steps", "Password reset instructions", "Update profile"]
-query = "Forgot login details"
+# Create sample documents
+documents = [
+    "How to reset your password: Click forgot password on login page",
+    "Account recovery steps for forgotten credentials",
+    "Password reset instructions and security guidelines",
+    "Update your profile information in account settings",
+    "Two-factor authentication setup guide",
+    "Troubleshooting login issues and access problems",
+    "Security best practices for strong passwords",
+    "How to change your email address in settings",
+    "Recovering locked accounts after failed login attempts",
+    "Password manager recommendations for secure storage"
+]
 
-# Keyword component (BM25)
-tokenized_docs = [doc.lower().split() for doc in documents]
-bm25 = BM25Okapi(tokenized_docs)
-bm25_scores = bm25.get_scores(query.lower().split())
-
-# Semantic component
-model = SentenceTransformer('all-MiniLM-L6-v2')
-query_emb = model.encode(query)
-doc_embs = model.encode(documents)
-semantic_scores = util.cos_sim(query_emb, doc_embs)[0].numpy()
-
-# Hybrid: Weighted average (e.g., 0.4 keyword + 0.6 semantic)
-hybrid_scores = 0.4 * np.array(bm25_scores) + 0.6 * semantic_scores
-top_idx = np.argsort(-hybrid_scores)[0]
-print("Hybrid Top Result:", documents[top_idx])
-
+# Initialize hybrid search engine
+hybrid_engine = HybridSearchEngine()
+hybrid_engine.index_documents(documents)
+print("Hybrid search engine initialized!")
 ```
 
 **Step-by-Step Explanation:**
 
-1. **Tokenize documents for BM25**: Split documents into words for keyword scoring
-2. **Compute keyword scores**: Use BM25 algorithm for traditional relevance
-3. **Generate embeddings for semantic scores**: Create meaning-based vectors
-4. **Combine with weights**: Balance keyword precision with semantic understanding (tune based on domain)
-5. **Rank results**: Surface the best match using combined scores
+1. **Import Hybrid Engine**: Load the hybrid search implementation that combines approaches
+2. **Create Document Set**: Prepare diverse documents covering various topics
+3. **Initialize Engine**: Create hybrid search engine with default weights
+4. **Index Documents**: Build both BM25 index and semantic embeddings
+5. **Ready for Search**: System prepared to handle queries with adaptive weighting
+
+Let's test the hybrid approach with different query types:
+
+```python
+# Test different queries with varying lengths
+test_queries = [
+    "reset",  # Very short - keyword heavy
+    "forgot password",  # Short - balanced
+    "I can't remember my login",  # Medium - balanced  
+    "What are the steps to recover my account when I've forgotten my password?"  # Long - semantic heavy
+]
+
+# Compare search approaches
+results_comparison = []
+
+for query in test_queries:
+    # Get adaptive weights
+    kw_weight, sem_weight = hybrid_engine.adaptive_weighting(query)
+    
+    # Perform search
+    results = hybrid_engine.search(query, k=3, return_scores=True)
+    
+    results_comparison.append({
+        'query': query,
+        'query_length': len(query.split()),
+        'keyword_weight': kw_weight,
+        'semantic_weight': sem_weight,
+        'top_result': results[0]['document'][:50] + '...' if results else 'No results',
+        'top_score': results[0]['hybrid_score'] if results else 0
+    })
+
+# Create comparison table
+comparison_df = pd.DataFrame(results_comparison)
+print("\n🔍 Adaptive Weight Analysis:")
+print("="*80)
+display(comparison_df)
+```
+
+**Step-by-Step Explanation:**
+
+1. **Define Test Queries**: Create queries of varying lengths to test adaptive weighting
+2. **Calculate Weights**: System automatically adjusts keyword/semantic balance based on query
+3. **Perform Searches**: Execute hybrid search with adaptive weights
+4. **Collect Results**: Gather top matches and scores for analysis
+5. **Display Analysis**: Show how weights adapt to query characteristics
 
 This hybrid approach often outperforms either method alone, especially in domains where specific terminology matters but users may phrase queries differently.
 
@@ -350,16 +423,52 @@ Building search is half the battle. Proving it works requires clear metrics:
 ### Calculating Precision and Recall for Search Results
 
 ```python
-# Example: Evaluating a search system
-retrieved = {"doc1", "doc2", "doc5"}  # IDs of documents returned by search
-relevant = {"doc2", "doc3", "doc5"}   # IDs of truly relevant documents
+# Implement search quality metrics
+def calculate_metrics(retrieved, relevant):
+    """
+    Calculate precision, recall, and F1 score
+    """
+    retrieved_set = set(retrieved)
+    relevant_set = set(relevant)
+    
+    true_positives = len(retrieved_set & relevant_set)
+    
+    precision = true_positives / len(retrieved_set) if retrieved_set else 0
+    recall = true_positives / len(relevant_set) if relevant_set else 0
+    f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+    
+    return precision, recall, f1
 
-precision = len(retrieved & relevant) / len(retrieved)
-recall = len(retrieved & relevant) / len(relevant)
-print(f"Precision: {precision:.2f}")
-print(f"Recall: {recall:.2f}")
-# Output: Precision: 0.67, Recall: 0.67
+# Example evaluation
+test_cases = [
+    {
+        'name': 'Perfect Match',
+        'retrieved': ['doc1', 'doc2', 'doc3'],
+        'relevant': ['doc1', 'doc2', 'doc3']
+    },
+    {
+        'name': 'Partial Match',
+        'retrieved': ['doc1', 'doc2', 'doc5'],
+        'relevant': ['doc2', 'doc3', 'doc5']
+    },
+    {
+        'name': 'Poor Match',
+        'retrieved': ['doc1', 'doc4', 'doc6'],
+        'relevant': ['doc2', 'doc3', 'doc5']
+    }
+]
 
+metrics_results = []
+for case in test_cases:
+    precision, recall, f1 = calculate_metrics(case['retrieved'], case['relevant'])
+    metrics_results.append({
+        'Scenario': case['name'],
+        'Precision': precision,
+        'Recall': recall,
+        'F1 Score': f1
+    })
+
+metrics_df = pd.DataFrame(metrics_results)
 ```
 
 **Step-by-Step Explanation:**
@@ -368,6 +477,7 @@ print(f"Recall: {recall:.2f}")
 2. **Calculate Intersection**: Find documents that are both retrieved and relevant
 3. **Compute Precision**: Fraction of retrieved that are relevant
 4. **Compute Recall**: Fraction of relevant that were retrieved
+5. **Calculate F1**: Harmonic mean balancing precision and recall
 
 Practice requires averaging metrics across many queries. For ranking metrics (MRR, NDCG), libraries like Hugging Face's `evaluate`, `scikit-learn`, or `pytrec_eval` automate calculations.
 
@@ -457,109 +567,184 @@ The `sentence-transformers` library remains essential for local workflows. For E
 ### Generating Embeddings with Sentence Transformers
 
 ```python
-from sentence_transformers import SentenceTransformer
-
-# Load a pre-trained sentence transformer model
-model = SentenceTransformer('all-MiniLM-L6-v2')
-
-# Example sentences to embed
+# Generate embeddings for different types of sentences
 sentences = [
+    # Similar meanings
     "How do I reset my password?",
-    "Account recovery steps"
+    "What are the steps to recover my account?",
+    "I forgot my login credentials",
+    
+    # Different topic
+    "The weather is nice today",
+    "It's a beautiful sunny day",
+    
+    # Another different topic
+    "Machine learning is fascinating",
+    "AI and deep learning are interesting"
 ]
 
-# Generate embeddings (returns a NumPy array of floats)
+# Generate embeddings
 embeddings = model.encode(sentences)
-
-print(embeddings.shape)  # Output: (2, 384)
-
+print(f"Generated embeddings for {len(sentences)} sentences")
+print(f"Embedding shape: {embeddings.shape}")
 ```
 
 **Step-by-Step Explanation:**
 
-1. **Import Library**: Load sentence-transformers for embedding generation
-2. **Load Model**: Initialize pre-trained model from Hugging Face
-3. **Define Sentences**: Create text samples to embed
-4. **Generate Embeddings**: Convert sentences to 384-dimensional vectors
-5. **Verify Shape**: Confirm output dimensions match expectations
+1. **Define Sentence Groups**: Create sentences with similar and different meanings
+2. **Generate Embeddings**: Convert sentences to 384-dimensional vectors
+3. **Verify Output**: Confirm embedding dimensions match expectations
+4. **Understand Structure**: Each sentence maps to a fixed-size vector
+5. **Ready for Comparison**: Embeddings can now be compared for similarity
 
 Similar sentences produce similar vectors, enabling meaningful comparison. For other languages or industries, choose models trained on relevant data. Modern APIs support longer sequences—essential for document search and RAG.
 
-For state-of-the-art performance, explore Google Gemini Embedding, OpenAI's latest APIs, or top MTEB models supporting extended inputs, superior accuracy, and broader language coverage. If you are using AWS Bedrock, Cohere’s embeddings are probably your best bet. 
+For state-of-the-art performance, explore Google Gemini Embedding, OpenAI's latest APIs, or top MTEB models supporting extended inputs, superior accuracy, and broader language coverage. If you are using AWS Bedrock, Cohere's embeddings are probably your best bet.
 
-### Modern Embedding API Example with OpenAI
+### Visualizing Embeddings in 2D
+
+Let's reduce the dimensionality of embeddings to visualize them in 2D space using t-SNE:
 
 ```python
-# Example using OpenAI's embedding API (requires API key)
-import openai
-import numpy as np
+from sklearn.manifold import TSNE
 
-# Set your OpenAI API key
-openai.api_key = "your-api-key-here"
+# Generate more embeddings for better visualization
+categories = {
+    "Password/Login": [
+        "How do I reset my password?",
+        "Forgot my login credentials",
+        "Account recovery steps",
+        "Can't access my account"
+    ],
+    "Billing/Payment": [
+        "How to update payment method?",
+        "Request a refund",
+        "Billing information update",
+        "Payment failed issues"
+    ],
+    "Technical Support": [
+        "App crashes frequently",
+        "Software bug report",
+        "Technical difficulties",
+        "System error messages"
+    ]
+}
 
-def get_openai_embeddings(texts):
-    """Generate embeddings using OpenAI's latest text-embedding model"""
-    response = openai.Embedding.create(
-        model="text-embedding-ada-002",  # Or newer models as available
-        input=texts
-    )
-    embeddings = [item['embedding'] for item in response['data']]
-    return np.array(embeddings)
+# Prepare data
+all_sentences = []
+labels = []
+colors = []
+color_map = {'Password/Login': 'red', 'Billing/Payment': 'green', 'Technical Support': 'blue'}
 
-# Example usage
-texts = ["How do I reset my password?", "Account recovery steps"]
-openai_embeddings = get_openai_embeddings(texts)
-print(f"OpenAI embeddings shape: {openai_embeddings.shape}")  # (2, 1536)
+for category, sents in categories.items():
+    all_sentences.extend(sents)
+    labels.extend([category] * len(sents))
+    colors.extend([color_map[category]] * len(sents))
 
-# Compare with sentence-transformers for cost/performance trade-offs
-# OpenAI: Higher accuracy, API costs, larger dimensions
-# Sentence-transformers: Free, local, smaller dimensions
+# Generate embeddings
+all_embeddings = model.encode(all_sentences)
 
+# Apply t-SNE
+tsne = TSNE(n_components=2, random_state=42, perplexity=5)
+embeddings_2d = tsne.fit_transform(all_embeddings)
 ```
 
 **Step-by-Step Explanation:**
 
-1. **Import Libraries**: Load OpenAI client and NumPy
-2. **Set API Key**: Configure authentication for OpenAI
-3. **Define Function**: Create reusable embedding generator
-4. **Call API**: Request embeddings from OpenAI's model
-5. **Extract Vectors**: Parse response into NumPy array
-6. **Compare Options**: Understand trade-offs between APIs and local models
+1. **Organize by Category**: Group sentences into meaningful categories
+2. **Prepare Labels**: Track category membership for visualization
+3. **Generate All Embeddings**: Create vectors for entire dataset
+4. **Apply Dimensionality Reduction**: Use t-SNE to project to 2D space
+5. **Visualize Clustering**: Similar meanings cluster together in 2D
 
 ### RAG: Combining Search with Generation
 
 Since RAG (Retrieval-Augmented Generation) is increasingly important, let's see how embeddings feed into generative AI:
 
 ```python
-from transformers import pipeline
-from sentence_transformers import SentenceTransformer, util
-import numpy as np
+# Create a knowledge base
+knowledge_base = [
+    "Our refund policy allows returns within 30 days of purchase. To initiate a refund, contact customer support with your order number.",
+    "Password reset: Click 'Forgot Password' on the login page. Enter your email address and check your inbox for reset instructions.",
+    "Two-factor authentication adds an extra layer of security. Enable it in your account settings under the Security tab.",
+    "Premium subscription includes unlimited storage, priority support, and advanced analytics features for $19.99/month.",
+    "Technical support is available 24/7 via email at support@example.com or through live chat on our website.",
+    "Account suspension may occur due to policy violations. Contact support to appeal or learn more about the suspension.",
+    "Data privacy: We use industry-standard encryption and never share your personal information with third parties.",
+    "API rate limits: Free tier allows 1000 requests/day. Premium users get 10,000 requests/day with no throttling."
+]
 
-# Setup retriever (simple in-memory for demo)
-model = SentenceTransformer('all-MiniLM-L6-v2')
-docs = ["Refund policy: 30 days money back.", "Account recovery: Contact support."]
-doc_embs = model.encode(docs)
-
-# Query
-query = "How do I get a refund?"
-query_emb = model.encode(query)
-scores = util.cos_sim(query_emb, doc_embs)[0].numpy()
-top_doc = docs[np.argmax(scores)]
-
-# RAG: Use retrieved doc as context for LLM
-generator = pipeline('text-generation', model='gpt2')  # Replace with fine-tuned model in production
-prompt = f"Context: {top_doc}\\nQuestion: {query}\\nAnswer:"
-response = generator(prompt, max_length=50)[0]['generated_text']
-print("RAG Response:", response)
-
+# Create embeddings for knowledge base
+kb_embeddings = model.encode(knowledge_base)
+print(f"Knowledge base contains {len(knowledge_base)} documents")
 ```
 
 **Step-by-Step Explanation:**
 
-1. **Embed documents and query**: Create vectors for similarity search
-2. **Retrieve top match via cosine similarity**: Find most relevant document
-3. **Craft prompt with context**: Combine retrieved information with question
-4. **Generate response**: Use LLM to produce contextual answer
+1. **Define Knowledge Base**: Create documents covering various topics
+2. **Generate KB Embeddings**: Convert all documents to vectors
+3. **Store for Retrieval**: Embeddings ready for similarity search
+4. **Enable RAG**: System can now retrieve relevant context
+5. **Support Generation**: Retrieved docs provide context for answers
+
+### Simple RAG Implementation
+
+```python
+# Simple RAG implementation
+def simple_rag(query, knowledge_base, kb_embeddings, model, top_k=2):
+    """
+    Simple RAG: Retrieve relevant context and generate response
+    """
+    # Step 1: Retrieve relevant documents
+    query_embedding = model.encode(query)
+    similarities = util.cos_sim(query_embedding, kb_embeddings)[0]
+    top_indices = similarities.argsort(descending=True)[:top_k]
+    
+    # Get retrieved documents
+    retrieved_docs = [knowledge_base[idx] for idx in top_indices]
+    retrieved_scores = [float(similarities[idx]) for idx in top_indices]
+    
+    # Step 2: Create context for generation
+    context = "\n\n".join(retrieved_docs)
+    
+    # Step 3: Generate response (using a simple template for demonstration)
+    # In production, you would use a proper LLM here
+    response = f"""Based on the information in our knowledge base:
+
+{context}
+
+To answer your question about '{query}':
+{retrieved_docs[0]}
+
+This information was retrieved with {retrieved_scores[0]:.1%} confidence."""
+    
+    return response, retrieved_docs, retrieved_scores
+
+# Test RAG system
+test_questions = [
+    "How do I get a refund?",
+    "Is my data secure?",
+    "What are the API limits?"
+]
+
+for question in test_questions:
+    print(f"\n{'='*60}")
+    print(f"❓ Question: {question}")
+    response, docs, scores = simple_rag(question, knowledge_base, kb_embeddings, model)
+    print(f"\n📚 Retrieved Documents:")
+    for i, (doc, score) in enumerate(zip(docs, scores)):
+        print(f"  {i+1}. (Score: {score:.3f}) {doc[:80]}...")
+    print(f"\n💡 Generated Response:")
+    print(response)
+```
+
+**Step-by-Step Explanation:**
+
+1. **Embed Query**: Convert user question to vector
+2. **Find Similar Documents**: Calculate cosine similarity with knowledge base
+3. **Retrieve Top Matches**: Get most relevant documents
+4. **Build Context**: Combine retrieved documents
+5. **Generate Response**: Use context to answer question
 
 Note: Use larger models like Llama-2 or GPT-4 for better production results. This demonstrates how semantic search enables more accurate, grounded AI responses.
 
@@ -567,28 +752,52 @@ Note: Use larger models like Llama-2 or GPT-4 for better production results. Thi
 
 Real systems handle thousands of documents—product catalogs, support tickets, articles. Batch processing accelerates embedding creation. You'll need persistent storage for search. **Vector databases** are now industry standard for production.
 
-### Batch Embedding and Saving to Disk
+### Batch Embedding with FAISS
 
 ```python
+# Generate a larger dataset for FAISS demonstration
 import numpy as np
+np.random.seed(42)
 
-# Example: List of document texts
-documents = ["Doc 1 text", "Doc 2 text", "Doc 3 text"]
+# Create synthetic documents
+num_documents = 1000
+categories = ['tech', 'health', 'finance', 'education', 'travel']
+synthetic_docs = []
 
-# Batch encode documents (adjust batch_size for your hardware)
-doc_embeddings = model.encode(documents, batch_size=32, show_progress_bar=True)
+templates = {
+    'tech': ['software', 'hardware', 'programming', 'AI', 'data'],
+    'health': ['wellness', 'medicine', 'fitness', 'nutrition', 'mental'],
+    'finance': ['investment', 'banking', 'budget', 'savings', 'credit'],
+    'education': ['learning', 'teaching', 'courses', 'degree', 'skills'],
+    'travel': ['vacation', 'destination', 'flights', 'hotels', 'adventure']
+}
 
-# Save embeddings as a NumPy array for later use
-np.save('doc_embeddings.npy', doc_embeddings)
+for i in range(num_documents):
+    cat = np.random.choice(categories)
+    word = np.random.choice(templates[cat])
+    synthetic_docs.append(f"Document about {word} in {cat} category #{i}")
 
+print(f"Generated {len(synthetic_docs)} synthetic documents")
+print("\nSample documents:")
+for i in range(5):
+    print(f"  - {synthetic_docs[i]}")
+
+# Generate embeddings for all documents
+print("Generating embeddings...")
+doc_embeddings = model.encode(synthetic_docs, batch_size=32, show_progress_bar=True)
+doc_embeddings = doc_embeddings.astype('float32')  # FAISS requires float32
+
+print(f"\nEmbeddings shape: {doc_embeddings.shape}")
+print(f"Memory usage: {doc_embeddings.nbytes / 1024 / 1024:.2f} MB")
 ```
 
 **Step-by-Step Explanation:**
 
-1. **Prepare Documents**: Create list of texts to embed
-2. **Batch Encode**: Process multiple documents efficiently
-3. **Show Progress**: Track encoding progress for large batches
-4. **Save Embeddings**: Store vectors in NumPy format for fast loading
+1. **Create Large Dataset**: Generate 1000 synthetic documents across categories
+2. **Batch Encode**: Process documents in batches of 32 for efficiency
+3. **Convert to Float32**: FAISS requires specific data type
+4. **Track Memory Usage**: Monitor resource consumption
+5. **Ready for Indexing**: Embeddings prepared for vector database
 
 ⚡ **Pro Tip:** Always maintain document ID mapping. Track which embedding corresponds to which document—critical for retrieving correct text later.
 
@@ -608,25 +817,50 @@ Models like `'paraphrase-multilingual-MiniLM-L12-v2'` support 50+ languages. Goo
 For effective multilingual search, we need specialized embedding models that understand semantic meaning across different languages. Let's explore how to generate these powerful cross-language embeddings.
 
 ```python
-multi_model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
+# Load multilingual model
+print("Loading multilingual model...")
+multilingual_model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
+print("Multilingual model loaded!")
 
-sentences = [
-    "How do I reset my password?",        # English
-    "¿Cómo puedo restablecer mi contraseña?",  # Spanish
-    "Comment réinitialiser mon mot de passe?"  # French
+# Create multilingual FAQ dataset
+multilingual_faqs = [
+    # English
+    "How do I reset my password?",
+    "Contact customer support",
+    "Refund policy information",
+    
+    # Spanish
+    "¿Cómo puedo restablecer mi contraseña?",
+    "Contactar con atención al cliente",
+    "Información sobre política de reembolso",
+    
+    # French
+    "Comment réinitialiser mon mot de passe?",
+    "Contacter le support client",
+    "Informations sur la politique de remboursement",
+    
+    # German
+    "Wie kann ich mein Passwort zurücksetzen?",
+    "Kundensupport kontaktieren",
+    "Informationen zur Rückerstattungsrichtlinie"
 ]
 
-multi_embeddings = multi_model.encode(sentences)
-print(multi_embeddings.shape)  # Output: (3, 384)
+languages = ['English', 'English', 'English', 
+             'Spanish', 'Spanish', 'Spanish',
+             'French', 'French', 'French',
+             'German', 'German', 'German']
 
+# Generate multilingual embeddings
+multilingual_embeddings = multilingual_model.encode(multilingual_faqs)
 ```
 
 **Step-by-Step Explanation:**
 
 1. **Load Multilingual Model**: Initialize model supporting multiple languages
-2. **Define Multilingual Sentences**: Same meaning in three languages
-3. **Generate Embeddings**: Create vectors capturing cross-language meaning
-4. **Verify Consistency**: All produce same-dimension embeddings
+2. **Define Multilingual Sentences**: Same meaning in four languages
+3. **Track Languages**: Maintain language labels for analysis
+4. **Generate Embeddings**: Create vectors capturing cross-language meaning
+5. **Enable Cross-Language Search**: Queries in one language find results in others
 
 These three sentences share meaning—multilingual models ensure their embeddings cluster together, enabling seamless cross-language search.
 
@@ -721,52 +955,78 @@ Install FAISS choosing CPU or GPU versions based on your hardware. Ensure Python
 ### Installing and Importing FAISS (v1.7.2+)
 
 ```python
-# Using Python 3.12.9 environment
-# Install FAISS for CPU
-# pip install faiss-cpu
-# Or for GPU (CUDA)
-# pip install faiss-gpu
-
-# Or with poetry (recommended)
-# poetry add faiss-cpu
-
-# Or with conda
-# conda install -c pytorch faiss-cpu
-
-import faiss
+# Import necessary libraries
 import numpy as np
+import time
+import faiss
+from sentence_transformers import SentenceTransformer
+import matplotlib.pyplot as plt
+import seaborn as sns
+import warnings
+warnings.filterwarnings('ignore')
 
-print(f"FAISS version: {faiss.__version__}")  # Should be 1.7.2 or higher
-print(f"Python version: {sys.version}")  # Verify 3.12.9
+# Set up plotting style
+plt.style.use('seaborn-v0_8-darkgrid')
+sns.set_palette("husl")
 
+print("Libraries imported successfully!")
+print(f"FAISS version: {faiss.__version__}")
 ```
+
+**Step-by-Step Explanation:**
+
+1. **Import Core Libraries**: Load FAISS and supporting packages
+2. **Import Visualization Tools**: Set up matplotlib and seaborn for analysis
+3. **Configure Environment**: Suppress warnings and set plotting style
+4. **Verify Installation**: Print FAISS version to confirm setup
+5. **Ready for Indexing**: System prepared for vector operations
 
 FAISS requires embeddings as NumPy arrays with dtype 'float32'. Convert other types before indexing to prevent errors.
 
-### Ensuring Embedding Data Type Compatibility
+### Creating Different FAISS Index Types
 
 ```python
-embeddings = np.array(embeddings, dtype=np.float32)  # Always use float32
+# Compare different FAISS index types
+dimension = doc_embeddings.shape[1]
+indices = {}
+build_times = {}
 
-```
+# 1. Exact search (IndexFlatL2)
+start = time.time()
+index_flat = faiss.IndexFlatL2(dimension)
+index_flat.add(doc_embeddings)
+build_times['Flat L2 (Exact)'] = time.time() - start
+indices['Flat L2 (Exact)'] = index_flat
 
-Create your first FAISS index—a data structure enabling fast similarity search. For small-medium datasets, exact search works perfectly.
+# 2. Approximate search (IndexIVFFlat)
+start = time.time()
+nlist = 50  # Number of clusters
+quantizer = faiss.IndexFlatL2(dimension)
+index_ivf = faiss.IndexIVFFlat(quantizer, dimension, nlist)
+index_ivf.train(doc_embeddings)  # Training required
+index_ivf.add(doc_embeddings)
+build_times['IVF Flat (Approximate)'] = time.time() - start
+indices['IVF Flat (Approximate)'] = index_ivf
 
-### Creating a Simple FAISS Index (Exact Search)
+# 3. Graph-based search (IndexHNSWFlat)
+start = time.time()
+index_hnsw = faiss.IndexHNSWFlat(dimension, 32)  # 32 is the connectivity parameter
+index_hnsw.add(doc_embeddings)
+build_times['HNSW (Graph)'] = time.time() - start
+indices['HNSW (Graph)'] = index_hnsw
 
-```python
-# Assume 'embeddings' is a (num_vectors, dimension) float32 array
-dimension = embeddings.shape[1]  # Embedding size
-index = faiss.IndexFlatL2(dimension)  # Exact search with L2 distance
-index.add(embeddings)  # Add embeddings to index
-
+print("Index Build Times:")
+for name, time_taken in build_times.items():
+    print(f"  {name}: {time_taken:.3f} seconds")
 ```
 
 **Step-by-Step Explanation:**
 
 1. **Get Dimension**: Extract embedding vector length (e.g., 384)
-2. **Create Index**: Initialize exact L2 distance index
-3. **Add Data**: Load embeddings for fast searching
+2. **Create Exact Index**: Initialize L2 distance index for accurate search
+3. **Build Approximate Index**: Create IVF index with clustering for speed
+4. **Train IVF**: Learn cluster centers from data
+5. **Create Graph Index**: Build HNSW for fast approximate search
 
 For larger datasets, explore approximate or compressed indices (covered in scaling section).
 
@@ -780,31 +1040,47 @@ Process:
 2. Search FAISS index for nearest neighbors
 3. Map results to original data
 
-### Performing a Search Query with Error Handling
+### Performing a Search Query with FAISS
 
 ```python
-try:
-    query_text = "How can I get my money back?"
-    query_embedding = model.encode([query_text]).astype(np.float32)
-    # Ensure shape is (1, dimension)
-    if query_embedding.ndim == 1:
-        query_embedding = query_embedding.reshape(1, -1)
-    distances, indices = index.search(query_embedding, k=3)  # Top-3 matches
-    print("Top 3 matching document indices:", indices[0])
-    print("Corresponding distances:", distances[0])
-except Exception as e:
-    print(f"An error occurred during FAISS search: {e}")
+# Benchmark search performance
+query = "Looking for AI and machine learning resources"
+query_embedding = model.encode([query]).astype('float32')
+k = 10  # Number of neighbors
 
+search_times = {}
+search_results = {}
+
+for name, index in indices.items():
+    # Set search parameters for IVF
+    if 'IVF' in name:
+        index.nprobe = 10  # Number of clusters to search
+    
+    # Perform search
+    start = time.time()
+    distances, indices_found = index.search(query_embedding, k)
+    search_times[name] = (time.time() - start) * 1000  # Convert to ms
+    search_results[name] = (distances[0], indices_found[0])
+
+# Display search results
+print(f"\nQuery: '{query}'")
+print("\nTop 5 results from each index type:")
+for name, (distances, indices_found) in search_results.items():
+    print(f"\n{name}:")
+    for i in range(5):
+        idx = indices_found[i]
+        dist = distances[i]
+        print(f"  {i+1}. {synthetic_docs[idx][:60]}... (distance: {dist:.3f})")
 ```
 
 **Step-by-Step Explanation:**
 
 1. **Define Query**: User's search question
 2. **Generate Embedding**: Convert query to vector using same model
-3. **Reshape if Needed**: Ensure proper dimensions for FAISS
-4. **Search Index**: Find top-k most similar embeddings
-5. **Handle Errors**: Gracefully manage potential issues
-6. **Display Results**: Show matching indices and distances
+3. **Configure Search**: Set parameters for different index types
+4. **Execute Search**: Find top-k most similar embeddings
+5. **Measure Performance**: Track search time in milliseconds
+6. **Display Results**: Show matching documents with distances
 
 Lower distance indicates higher similarity for L2 distance metric.
 
@@ -814,52 +1090,106 @@ Deletion/updates are complex. Version 1.7.2 supports limited deletion (IndexIVFF
 
 Always save indices after major updates for reliability and fast recovery.
 
-### Saving and Loading a FAISS Index (v1.7.2+)
+### Building Memory-Efficient Indices with Product Quantization
 
 ```python
-# Save the index
-faiss.write_index(index, "my_faiss.index")
+# Create a memory-efficient index using Product Quantization
+# This reduces memory usage at the cost of some accuracy
 
-# Load it later
-index = faiss.read_index("my_faiss.index")
+# Parameters
+nlist = 50  # Number of clusters
+m = 8       # Number of subquantizers
+nbits = 8   # Bits per subquantizer
 
-```
+# Create index
+quantizer = faiss.IndexFlatL2(dimension)
+index_pq = faiss.IndexIVFPQ(quantizer, dimension, nlist, m, nbits)
 
-Production tip: Version indices and store in durable locations (object storage, distributed filesystems) for disaster recovery.
+# Train the index
+print("Training PQ index...")
+index_pq.train(doc_embeddings)
+index_pq.add(doc_embeddings)
 
-### Managed Vector DB Example with Chroma
+# Compare memory usage
+flat_memory = index_flat.ntotal * dimension * 4 / (1024 * 1024)  # MB
+pq_memory = index_pq.ntotal * m * nbits / 8 / (1024 * 1024)  # MB
 
-To complement FAISS with a cloud-managed alternative, here's how to use Chroma for simpler deployment:
-
-```python
-from chromadb import Client
-from sentence_transformers import SentenceTransformer
-
-# Setup Chroma client
-client = Client()
-collection = client.create_collection("docs")
-
-# Embed and upsert documents
-model = SentenceTransformer('all-MiniLM-L6-v2')
-docs = ["Doc1 text", "Doc2 text"]
-embeddings = model.encode(docs).tolist()
-collection.add(ids=["1", "2"], embeddings=embeddings, documents=docs)
-
-# Query
-query_emb = model.encode(["Similar query"]).tolist()
-results = collection.query(query_embeddings=query_emb, n_results=1)
-print("Top Match:", results['documents'][0][0])
-
+print(f"\nMemory Usage Comparison:")
+print(f"  Flat Index: {flat_memory:.2f} MB")
+print(f"  PQ Index: {pq_memory:.2f} MB")
+print(f"  Compression Ratio: {flat_memory / pq_memory:.1f}x")
 ```
 
 **Step-by-Step Explanation:**
 
-1. **Initialize client and collection**: Set up Chroma database connection
-2. **Generate embeddings**: Create vectors for documents
-3. **Upsert with IDs**: Store documents with unique identifiers
-4. **Query and retrieve**: Find similar documents efficiently
+1. **Define Quantization Parameters**: Set clusters, subquantizers, and bits
+2. **Create PQ Index**: Combine IVF with product quantization
+3. **Train on Data**: Learn quantization codebook
+4. **Add Embeddings**: Store compressed representations
+5. **Compare Memory**: Show dramatic reduction vs. exact index
 
-This managed approach simplifies deployment while FAISS offers more control for custom solutions.
+Quantization enables billion-scale search on single servers or GPUs through dramatic memory reduction.
+
+### Practical FAISS Document Search System
+
+```python
+# Create a more realistic document search system
+class FAISSDocumentSearch:
+    def __init__(self, model_name='all-MiniLM-L6-v2'):
+        self.model = SentenceTransformer(model_name)
+        self.index = None
+        self.documents = []
+        
+    def index_documents(self, documents, index_type='IVFFlat', nlist=None):
+        """Index documents using specified FAISS index type"""
+        self.documents = documents
+        
+        # Generate embeddings
+        print(f"Generating embeddings for {len(documents)} documents...")
+        embeddings = self.model.encode(documents, show_progress_bar=True)
+        embeddings = embeddings.astype('float32')
+        
+        dimension = embeddings.shape[1]
+        n_documents = len(documents)
+        
+        # Auto-adjust nlist if not provided
+        if nlist is None:
+            # Rule of thumb: sqrt(n) clusters, but at least 1 and no more than n_documents
+            nlist = max(1, min(int(np.sqrt(n_documents)), n_documents))
+            if index_type == 'IVFFlat':
+                print(f"Auto-adjusted nlist to {nlist} based on {n_documents} documents")
+        
+        # Create index based on type
+        if index_type == 'Flat':
+            self.index = faiss.IndexFlatL2(dimension)
+            self.index.add(embeddings)
+        elif index_type == 'IVFFlat':
+            # For small datasets, fall back to Flat index
+            if n_documents < 40:
+                print(f"⚠️ Only {n_documents} documents. Using Flat index instead of IVF for better results.")
+                self.index = faiss.IndexFlatL2(dimension)
+                self.index.add(embeddings)
+            else:
+                quantizer = faiss.IndexFlatL2(dimension)
+                self.index = faiss.IndexIVFFlat(quantizer, dimension, nlist)
+                self.index.train(embeddings)
+                self.index.add(embeddings)
+        elif index_type == 'HNSW':
+            self.index = faiss.IndexHNSWFlat(dimension, 32)
+            self.index.add(embeddings)
+        
+        print(f"Indexed {self.index.ntotal} documents")
+```
+
+**Step-by-Step Explanation:**
+
+1. **Initialize Search System**: Create class with model and index storage
+2. **Generate Document Embeddings**: Batch encode all documents
+3. **Auto-Configure Parameters**: Intelligently set index parameters
+4. **Choose Index Type**: Select appropriate index for dataset size
+5. **Build and Populate Index**: Train (if needed) and add embeddings
+
+This class provides a production-ready foundation for document search with automatic optimization based on dataset characteristics.
 
 ### Scaling Semantic Search
 
@@ -876,98 +1206,21 @@ ANN algorithms dramatically accelerate search by returning close (not always exa
 
 Choose based on dataset size, accuracy needs, and hardware.
 
-### Building an Approximate Search Index with FAISS (IVF)
-
-```python
-# Set up an IVF index for large-scale search
-nlist = 100  # Number of clusters (tune for your data)
-quantizer = faiss.IndexFlatL2(dimension)  # Used for cluster assignment
-index_ivf = faiss.IndexIVFFlat(quantizer, dimension, nlist, faiss.METRIC_L2)
-
-# Must train the index before adding data
-index_ivf.train(embeddings)
-index_ivf.add(embeddings)
-
-# Enable parallel search for faster queries (optional, multi-core CPUs)
-faiss.omp_set_num_threads(4)
-
-```
-
-**Step-by-Step Explanation:**
-
-1. **Define Clusters**: Set number of partitions for vector space
-2. **Create Quantizer**: Initialize cluster assignment mechanism
-3. **Build IVF Index**: Combine quantizer with inverted file structure
-4. **Train Index**: Learn cluster centers from data
-5. **Add Data**: Insert embeddings into trained index
-6. **Enable Parallelism**: Use multiple CPU cores for faster search
-
-`IndexIVFFlat` partitions space into clusters for faster search. Training required before data addition. `nlist` balances speed vs. recall.
-
-1. **Quantization and Compression**
+2. **Quantization and Compression**
 
 For massive datasets, quantization reduces memory with minimal accuracy loss. FAISS supports Product Quantization (PQ) and LSQ (including GPU).
 
-### Building a Memory-Efficient Index with Product Quantization
-
-```python
-# Example: IVF with Product Quantization
-nlist = 100
-m = 8  # Number of subquantizers (tune for your dimension)
-nbits = 8  # Bits per quantizer
-quantizer = faiss.IndexFlatL2(dimension)
-index_ivfpq = faiss.IndexIVFPQ(quantizer, dimension, nlist, m, nbits)
-
-index_ivfpq.train(embeddings)
-index_ivfpq.add(embeddings)
-
-```
-
-Quantization enables billion-scale search on single servers or GPUs through dramatic memory reduction.
-
-1. **Sharding and Distributed Search**
+3. **Sharding and Distributed Search**
 
 Massive datasets require splitting across machines (sharding). Each shard handles partial data; results merge at query time. While FAISS lacks native multi-node orchestration, it integrates with distributed databases like Pinecone, Weaviate, or Milvus.
 
-1. **Hybrid Search: Semantic + Keyword**
+4. **Hybrid Search: Semantic + Keyword**
 
 Modern search combines vectors (semantic) with keywords (e.g., Elasticsearch). Common pattern: keyword filtering, then FAISS ranking. This hybrid maximizes precision and recall.
 
-1. **Integrating FAISS with Hugging Face Datasets**
+5. **Integrating FAISS with Production Systems**
 
-Hugging Face Datasets offers built-in FAISS integration—add indices to embedding columns for seamless search.
-
-### Integrating FAISS with Hugging Face Datasets
-
-```python
-from datasets import Dataset
-import numpy as np
-
-# Assume 'texts' (list of strings) and 'embeddings' (NumPy array) are defined
-hf_dataset = Dataset.from_dict({'text': texts, 'embeddings': list(embeddings)})
-
-# Add a FAISS index to the 'embeddings' column
-hf_dataset.add_faiss_index(column='embeddings')
-
-query_embedding = model.encode(["How can I get my money back?"]).astype(np.float32)
-scores, retrieved_examples = hf_dataset.get_nearest_examples(
-    'embeddings', query_embedding, k=3
-)
-
-for idx, (score, example) in enumerate(zip(scores, retrieved_examples['text'])):
-    print(f"Rank {idx+1}: {example} (Score: {score})")
-
-```
-
-**Step-by-Step Explanation:**
-
-1. **Create Dataset**: Combine texts with their embeddings
-2. **Add FAISS Index**: Enable fast search on embedding column
-3. **Query Dataset**: Search for similar documents
-4. **Retrieve Results**: Get nearest examples with scores
-5. **Display Ranked Results**: Show top matches with similarity scores
-
-This integration streamlines experimentation and production deployment within the Hugging Face ecosystem.
+Production deployments integrate FAISS with application infrastructure, metadata storage, and monitoring. The example search class demonstrates practical patterns for real-world use.
 
 **Summary**: Scaling semantic search requires more than speed—it demands reliable, relevant results at any scale. Choose appropriate FAISS indices, leverage quantization, integrate with distributed and hybrid tools for enterprise-grade systems.
 
@@ -1036,118 +1289,199 @@ Perfect for organizations already using PostgreSQL who need vector capabilities 
 
 ### Setting Up PostgreSQL with pgvector
 
-First, install PostgreSQL with pgvector extension. We'll use Docker for quick setup:
+First, we need to connect to PostgreSQL and enable the pgvector extension:
 
-```bash
-# Using Docker Compose (recommended for development)
-docker-compose up -d postgres-vector
+```python
+# Import required libraries
+import os
+import psycopg2
+from psycopg2.extras import RealDictCursor
+import numpy as np
+from sentence_transformers import SentenceTransformer
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import time
+from dotenv import load_dotenv
+import json
 
-# Or direct Docker command
-docker run -d \\
-  --name pgvector-demo \\
-  -e POSTGRES_PASSWORD=postgres \\
-  -p 5433:5432 \\
-  pgvector/pgvector:pg16
+# Load environment variables
+load_dotenv()
 
-# Verify connection
-psql -h localhost -p 5433 -U postgres -d postgres
+# Set plotting style
+plt.style.use('seaborn-v0_8-darkgrid')
+sns.set_palette("husl")
 
+print("Libraries imported successfully!")
+
+# Database connection parameters
+conn_params = {
+    'host': os.getenv('POSTGRES_HOST', 'localhost'),
+    'port': os.getenv('POSTGRES_PORT', '5433'),
+    'dbname': os.getenv('POSTGRES_DB', 'vector_demo'),
+    'user': os.getenv('POSTGRES_USER', 'postgres'),
+    'password': os.getenv('POSTGRES_PASSWORD', 'postgres')
+}
+
+# Connect to PostgreSQL
+try:
+    conn = psycopg2.connect(**conn_params)
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    print("✅ Connected to PostgreSQL")
+    
+    # Register pgvector extension
+    from pgvector.psycopg2 import register_vector
+    register_vector(conn)
+    print("✅ pgvector extension registered")
+    
+except Exception as e:
+    print(f"❌ Connection failed: {e}")
+    print("\nPlease ensure PostgreSQL is running:")
+    print("  task postgres-start")
 ```
+
+**Step-by-Step Explanation:**
+
+1. **Import Libraries**: Load PostgreSQL adapter and pgvector support
+2. **Configure Connection**: Set database connection parameters
+3. **Connect to Database**: Establish PostgreSQL connection
+4. **Register pgvector**: Enable vector operations in Python
+5. **Handle Errors**: Provide helpful error messages if connection fails
 
 ### Creating Vector-Enabled Tables
 
-```sql
--- Enable pgvector extension
-CREATE EXTENSION IF NOT EXISTS vector;
+```python
+# Enable pgvector extension
+cursor.execute("CREATE EXTENSION IF NOT EXISTS vector")
+conn.commit()
+print("✅ pgvector extension enabled")
 
--- Create a table for documents with embeddings
+# Check version
+cursor.execute("SELECT extversion FROM pg_extension WHERE extname = 'vector'")
+version = cursor.fetchone()
+print(f"pgvector version: {version['extversion'] if version else 'Not found'}")
+
+# Load sentence transformer model
+print("Loading embedding model...")
+model = SentenceTransformer('all-MiniLM-L6-v2')
+dimension = model.get_sentence_embedding_dimension()
+print(f"✅ Model loaded (dimension: {dimension})")
+
+# Drop existing table if exists
+cursor.execute("DROP TABLE IF EXISTS documents CASCADE")
+
+# Create table with vector column
+create_table_sql = f"""
 CREATE TABLE documents (
     id SERIAL PRIMARY KEY,
     content TEXT NOT NULL,
-    embedding vector(384),  -- 384 dimensions for all-MiniLM-L6-v2
+    embedding vector({dimension}),
     metadata JSONB,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+)
+"""
 
--- Create index for fast similarity search
-CREATE INDEX ON documents USING ivfflat (embedding vector_cosine_ops)
-WITH (lists = 100);
-
+cursor.execute(create_table_sql)
+conn.commit()
+print("✅ Table 'documents' created")
 ```
 
 **Step-by-Step Explanation:**
 
-1. **Enable Extension**: Activate pgvector in your database
-2. **Define Vector Column**: Specify dimensions matching your embedding model
-3. **Add Metadata**: JSONB column for flexible additional data
-4. **Create Index**: IVFFlat index for approximate nearest neighbor search
-5. **Configure Lists**: Balance between speed and accuracy (more lists = better accuracy)
+1. **Enable Extension**: Activate pgvector in the database
+2. **Verify Version**: Check pgvector installation
+3. **Load Embedding Model**: Initialize sentence transformer
+4. **Define Schema**: Create table with vector column matching embedding dimensions
+5. **Add Metadata Support**: Include JSONB for flexible additional data
 
-### Python Integration with pgvector
+### Inserting Documents with Embeddings
 
 ```python
-import psycopg2
-from pgvector.psycopg2 import register_vector
-from sentence_transformers import SentenceTransformer
-import numpy as np
-
-# Connect to PostgreSQL
-conn = psycopg2.connect(
-    host="localhost",
-    port="5433",
-    database="vector_demo",
-    user="postgres",
-    password="postgres"
-)
-
-# Register pgvector type
-register_vector(conn)
-cursor = conn.cursor()
-
-# Initialize embedding model
-model = SentenceTransformer('all-MiniLM-L6-v2')
-
-# Insert documents with embeddings
+# Sample documents
 documents = [
-    "PostgreSQL is a powerful relational database",
-    "Vector search enables semantic similarity",
-    "pgvector integrates seamlessly with SQL"
+    "PostgreSQL is a powerful, open source relational database system.",
+    "Vector databases enable semantic search using embeddings.",
+    "pgvector adds vector similarity search to PostgreSQL.",
+    "Machine learning models generate embeddings for text data.",
+    "Semantic search understands meaning, not just keywords.",
+    "ACID transactions ensure data consistency in databases.",
+    "SQL queries can combine vector search with filters.",
+    "Embeddings capture semantic relationships between words.",
+    "PostgreSQL supports JSON data types natively.",
+    "Vector similarity search finds related documents efficiently."
 ]
 
-for doc in documents:
-    embedding = model.encode(doc)
-    cursor.execute(
-        "INSERT INTO documents (content, embedding) VALUES (%s, %s)",
-        (doc, embedding.tolist())
-    )
+# Generate embeddings
+print("Generating embeddings...")
+embeddings = model.encode(documents, show_progress_bar=True)
+
+# Insert documents with embeddings
+insert_sql = """
+INSERT INTO documents (content, embedding, metadata)
+VALUES (%s, %s, %s)
+"""
+
+for i, (doc, emb) in enumerate(zip(documents, embeddings)):
+    metadata = {
+        'length': len(doc),
+        'word_count': len(doc.split()),
+        'category': 'database' if 'database' in doc.lower() else 'ml'
+    }
+    cursor.execute(insert_sql, (doc, emb.tolist(), json.dumps(metadata)))
 
 conn.commit()
-
-# Perform semantic search
-query = "database with vector capabilities"
-query_embedding = model.encode(query)
-
-cursor.execute("""
-    SELECT content, 1 - (embedding <=> %s) AS similarity
-    FROM documents
-    ORDER BY embedding <=> %s
-    LIMIT 3
-""", (query_embedding.tolist(), query_embedding.tolist()))
-
-for row in cursor.fetchall():
-    print(f"Content: {row[0]}")
-    print(f"Similarity: {row[1]:.3f}\\n")
-
+print(f"\n✅ Inserted {len(documents)} documents")
 ```
 
 **Step-by-Step Explanation:**
 
-1. **Connect to Database**: Establish PostgreSQL connection
-2. **Register Vector Type**: Enable pgvector operations in Python
-3. **Generate Embeddings**: Use same model as FAISS examples
-4. **Insert with Embeddings**: Store documents and vectors together
-5. **Query with Similarity**: Use `<=>` operator for cosine distance
-6. **Calculate Similarity Score**: Convert distance to similarity (1 - distance)
+1. **Define Documents**: Create sample texts covering various topics
+2. **Generate Embeddings**: Convert documents to vectors
+3. **Prepare Metadata**: Add structured information about each document
+4. **Insert with Vectors**: Store documents, embeddings, and metadata together
+5. **Commit Transaction**: Ensure data is persisted
+
+### Performing Semantic Search with pgvector
+
+```python
+# Function to perform semantic search
+def semantic_search(query, limit=5):
+    # Generate query embedding
+    query_embedding = model.encode(query)
+    
+    # Search using cosine similarity
+    search_sql = """
+    SELECT 
+        id,
+        content,
+        1 - (embedding <=> %s::vector) AS similarity,
+        metadata
+    FROM documents
+    ORDER BY embedding <=> %s::vector
+    LIMIT %s
+    """
+    
+    cursor.execute(search_sql, (query_embedding.tolist(), query_embedding.tolist(), limit))
+    return cursor.fetchall()
+
+# Test semantic search
+query = "How to search for similar text?"
+print(f"🔍 Query: '{query}'\n")
+
+results = semantic_search(query)
+for i, result in enumerate(results, 1):
+    print(f"{i}. {result['content'][:70]}...")
+    print(f"   Similarity: {result['similarity']:.3f}")
+    print(f"   Category: {result['metadata']['category']}\n")
+```
+
+**Step-by-Step Explanation:**
+
+1. **Encode Query**: Convert search query to embedding
+2. **Use Cosine Distance**: The `<=>` operator calculates cosine distance
+3. **Convert to Similarity**: Use `1 - distance` for intuitive scores
+4. **Order by Distance**: Sort results by vector similarity
+5. **Return with Metadata**: Include document metadata in results
 
 ### Advanced pgvector Features
 
@@ -1155,21 +1489,51 @@ for row in cursor.fetchall():
 
 pgvector supports different index types for various use cases:
 
-```sql
--- IVFFlat: Good balance of speed and accuracy
-CREATE INDEX idx_ivfflat ON documents
-USING ivfflat (embedding vector_cosine_ops)
-WITH (lists = 100);
+```python
+# Test different index types
+index_tests = [
+    {"name": "No Index", "create_sql": None},
+    {
+        "name": "IVFFlat", 
+        "create_sql": "CREATE INDEX idx_ivfflat ON documents_test USING ivfflat (embedding vector_cosine_ops) WITH (lists = 50)"
+    },
+    {
+        "name": "HNSW", 
+        "create_sql": "CREATE INDEX idx_hnsw ON documents_test USING hnsw (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 64)"
+    }
+]
 
--- HNSW: Faster queries, more memory, better for static data
-CREATE INDEX idx_hnsw ON documents
-USING hnsw (embedding vector_cosine_ops)
-WITH (m = 16, ef_construction = 64);
+# Generate test data and compare performance
+# Create synthetic documents for testing
+large_docs = []
+for i in range(1000):
+    cat = np.random.choice(categories)
+    word = np.random.choice(templates[cat])
+    large_docs.append(f"Document about {word} in {cat} category #{i}")
 
--- No index: Exact search for small datasets
--- Simply omit the CREATE INDEX statement
+# Generate embeddings in batches
+large_embeddings = model.encode(large_docs, batch_size=32, show_progress_bar=True)
 
+# Test each index type
+for test in index_tests:
+    print(f"\nTesting {test['name']}...")
+    
+    # Create index if specified
+    if test['create_sql']:
+        cursor.execute(test['create_sql'])
+        conn.commit()
+    
+    # Benchmark searches
+    # ... performance testing code ...
 ```
+
+**Step-by-Step Explanation:**
+
+1. **Define Index Types**: Compare no index, IVFFlat, and HNSW
+2. **IVFFlat Parameters**: Set number of lists for clustering
+3. **HNSW Parameters**: Configure graph construction parameters
+4. **Generate Test Data**: Create larger dataset for meaningful comparison
+5. **Benchmark Performance**: Measure index creation and search times
 
 ### Comparing IVFFlat and HNSW Indexes
 
@@ -1199,49 +1563,55 @@ Both IVFFlat and HNSW are approximate nearest neighbor (ANN) indexes that accele
 - **Higher accuracy requirements:** Delivers better recall at same k value
 - **RAM-rich environments:** When memory isn't a primary constraint
 
-### Maintenance Considerations
-
-**IVFFlat:**
-
-1. **Rebuilding Frequency:** Performs well with incremental updates but benefits from periodic reindexing (weekly/monthly) when >20% of data changes
-2. **Parameter Tuning:** May need to adjust `lists` as dataset grows (rule of thumb: lists = √n/10 where n is row count)
-3. **Rebalancing:** Less sensitive to data distribution changes than HNSW
-
-**HNSW:**
-
-1. **Rebuilding Complexity:** More impacted by updates; consider full rebuilds after significant changes (>10% of data)
-2. **Build-Time vs Query-Time Tradeoff:** Higher `ef_construction` values create better indexes but take longer to build
-3. **Runtime Parameter Adjustment:** Can tune `ef_search` at query time without rebuilding index
-
-**Memory Usage Estimation:**
-
-- **IVFFlat:** Approximately 1.1x the size of your raw vector data
-- **HNSW:** Approximately 1.5-2.5x the size of your raw vector data (varies with `m` parameter)
-
-In practical implementations, consider starting with IVFFlat for development and testing, then benchmark against HNSW for production if query performance becomes a bottleneck and your data is relatively static.
-
 ### 2. Hybrid Search with Filters
 
 Combine vector similarity with SQL conditions:
 
-```sql
--- Find similar documents created in the last 7 days
-SELECT content, 1 - (embedding <=> %s) AS similarity
-FROM documents
-WHERE created_at > NOW() - INTERVAL '7 days'
-  AND metadata->>'category' = 'technical'
-ORDER BY embedding <=> %s
-LIMIT 5;
+```python
+# Demonstrate hybrid search capabilities
+print("🔍 Hybrid Search Example\n")
 
+# Query 1: Vector search with metadata filter
+query = "database systems"
+query_emb = model.encode(query)
+
+hybrid_sql = """
+SELECT 
+    content,
+    1 - (embedding <=> %s::vector) AS similarity,
+    metadata->>'category' AS category,
+    metadata->>'word_count' AS word_count
+FROM documents
+WHERE metadata->>'category' = 'database'
+ORDER BY embedding <=> %s::vector
+LIMIT 3
+"""
+
+cursor.execute(hybrid_sql, (query_emb.tolist(), query_emb.tolist()))
+results = cursor.fetchall()
+
+print(f"Query: '{query}' (filtered by category='database')\n")
+for i, result in enumerate(results, 1):
+    print(f"{i}. {result['content'][:60]}...")
+    print(f"   Similarity: {result['similarity']:.3f}")
+    print(f"   Words: {result['word_count']}\n")
 ```
+
+**Step-by-Step Explanation:**
+
+1. **Combine Vector and SQL**: Use WHERE clause with vector search
+2. **Filter by Metadata**: Restrict to specific category
+3. **Extract JSON Fields**: Use ->> operator for JSONB access
+4. **Order by Similarity**: Maintain vector ranking within filtered set
+5. **Return Rich Results**: Include metadata in response
 
 This SQL query demonstrates hybrid search in pgvector, combining vector similarity with traditional SQL filtering. Let's break down what it does:
 
 1. **Semantic Search with Filtering:** The query finds documents semantically similar to a query vector, but only within documents that meet specific criteria
 2. **Time-Based Filtering:** The `WHERE created_at > NOW() - INTERVAL '7 days'` clause restricts results to recent documents only
 3. **Metadata Filtering:** The `AND metadata->>'category' = 'technical'` clause filters by document category using JSON path operators
-4. **Similarity Calculation:** `1 - (embedding <=>; %s) AS similarity` converts cosine distance to similarity score (0-1 scale)
-5. **Ordering:** Results are sorted by vector similarity using the cosine distance operator `<=>;`
+4. **Similarity Calculation:** `1 - (embedding <=> %s) AS similarity` converts cosine distance to similarity score (0-1 scale)
+5. **Ordering:** Results are sorted by vector similarity using the cosine distance operator `<=>`
 6. **Result Limiting:** Only returns the top 5 most relevant matches
 
 This powerful approach combines the best of both worlds: the semantic understanding of vector search with the precise filtering capabilities of SQL. It's ideal for applications that need context-aware search but also require filtering by traditional database attributes.
@@ -1250,17 +1620,43 @@ This powerful approach combines the best of both worlds: the semantic understand
 
 pgvector supports multiple distance metrics:
 
-```sql
--- Cosine distance (default, normalized)
-ORDER BY embedding <=> query_vector
+```python
+# Compare different distance metrics
+query = "PostgreSQL database"
+query_emb = model.encode(query)
 
--- Euclidean distance (L2)
-ORDER BY embedding <-> query_vector
+metrics_sql = """
+SELECT 
+    content,
+    embedding <=> %s::vector AS cosine_distance,
+    embedding <-> %s::vector AS l2_distance,
+    (embedding <#> %s::vector) * -1 AS inner_product
+FROM documents
+ORDER BY embedding <=> %s::vector
+LIMIT 3
+"""
 
--- Inner product (for non-normalized vectors)
-ORDER BY embedding <#> query_vector
+cursor.execute(
+    metrics_sql, 
+    (query_emb.tolist(), query_emb.tolist(), query_emb.tolist(), query_emb.tolist())
+)
+results = cursor.fetchall()
 
+print(f"📏 Distance Metrics for '{query}':\n")
+for i, result in enumerate(results, 1):
+    print(f"{i}. {result['content'][:50]}...")
+    print(f"   Cosine Distance: {result['cosine_distance']:.4f}")
+    print(f"   L2 Distance: {result['l2_distance']:.4f}")
+    print(f"   Inner Product: {result['inner_product']:.4f}\n")
 ```
+
+**Step-by-Step Explanation:**
+
+1. **Cosine Distance (<=>)**: Normalized, focuses on direction
+2. **Euclidean Distance (<->)**: Actual distance in vector space
+3. **Inner Product (<#>)**: Dot product, useful for non-normalized vectors
+4. **Choose Appropriately**: Most text embeddings work best with cosine
+5. **Understand Trade-offs**: Each metric has specific use cases
 
 The choice of distance metric in vector search significantly impacts result quality and relevance. pgvector supports three primary distance functions, each with specific use cases:
 
@@ -1316,6 +1712,8 @@ For most transformer-based text embeddings (Open AI embeddings, Cohere embedding
 
 ### 1. Index Selection Strategy
 
+The notebook demonstrates how to choose the right index based on your use case:
+
 ```python
 def choose_index_type(num_vectors, update_frequency):
     """Recommend pgvector index based on use case"""
@@ -1325,7 +1723,6 @@ def choose_index_type(num_vectors, update_frequency):
         return "IVFFlat - handles updates better"
     else:
         return "HNSW - fastest queries for static data"
-
 ```
 
 This function provides a simple decision framework for choosing the right pgvector index type based on two key factors:
@@ -1342,14 +1739,13 @@ This strategy balances performance needs with operational characteristics, ensur
 # Efficient batch insertion
 def batch_insert_embeddings(documents, batch_size=100):
     embeddings = model.encode(documents, batch_size=32)
-
+    
     # Use COPY for fastest insertion
     with cursor.copy(
         "COPY documents (content, embedding) FROM STDIN"
     ) as copy:
         for doc, emb in zip(documents, embeddings):
             copy.write_row([doc, emb.tolist()])
-
 ```
 
 This code demonstrates an efficient method for batch inserting document embeddings into a PostgreSQL database using pgvector. Let's analyze what it does:
@@ -1362,24 +1758,68 @@ This code demonstrates an efficient method for batch inserting document embeddin
 
 This pattern is particularly valuable when initially populating a vector database or when performing batch updates, significantly reducing the time required for database operations while maintaining data integrity.
 
-### 3. Query Optimization
+### RAG Integration Example
 
-```sql
--- Optimize HNSW search performance
-SET hnsw.ef_search = 100;  -- Higher = more accurate, slower
+```python
+def rag_search(question, context_limit=3):
+    """
+    Retrieval-Augmented Generation using pgvector
+    """
+    # Retrieve relevant documents
+    query_emb = model.encode(question)
+    
+    rag_sql = """
+    SELECT 
+        content,
+        1 - (embedding <=> %s::vector) AS similarity
+    FROM documents
+    ORDER BY embedding <=> %s::vector
+    LIMIT %s
+    """
+    
+    cursor.execute(rag_sql, (query_emb.tolist(), query_emb.tolist(), context_limit))
+    results = cursor.fetchall()
+    
+    # Build context
+    context_parts = []
+    for i, result in enumerate(results, 1):
+        context_parts.append(f"{i}. {result['content']} (Relevance: {result['similarity']:.2%})")
+    
+    context = "\n".join(context_parts)
+    
+    # Format for LLM
+    prompt = f"""
+Based on the following context, answer the question.
 
--- Limit search to top candidates first
-WITH candidates AS (
-    SELECT * FROM documents
-    WHERE metadata->>'category' = 'target_category'
-    LIMIT 1000
-)
-SELECT content, 1 - (embedding <=> %s) AS similarity
-FROM candidates
-ORDER BY embedding <=> %s
-LIMIT 10;
+Context:
+{context}
 
+Question: {question}
+
+Answer: [This would be sent to an LLM for generation]
+"""
+    
+    return prompt, results
+
+# Test RAG search
+question = "How does pgvector help with semantic search?"
+prompt, docs = rag_search(question)
+
+print("🤖 RAG Example\n")
+print(f"Question: {question}\n")
+print("Retrieved Documents:")
+for doc in docs:
+    print(f"- {doc['content'][:80]}...")
+    print(f"  Relevance: {doc['similarity']:.2%}\n")
 ```
+
+**Step-by-Step Explanation:**
+
+1. **Retrieve Relevant Context**: Use vector search to find related documents
+2. **Build Structured Context**: Format documents with relevance scores
+3. **Create LLM Prompt**: Combine context with question
+4. **Enable Generation**: Prompt ready for LLM processing
+5. **Ground Responses**: Ensure answers based on retrieved facts
 
 ### Comparing pgvector with FAISS
 
@@ -1394,146 +1834,13 @@ LIMIT 10;
 | **Index Types** | More options | IVFFlat, HNSW |
 | **Updates** | Limited | Full CRUD support |
 
-Postgres with pgvector is available from GCP as AlloyDB. It is serverless, in that you don’t have to worry about scaling per se. Amazon provides support for pgvector and Postgres as well via Aurora so again, it manages the cluster for you. It is easy to spin up Postgres cluster with pgvector support as well. When it comes to scalabillity, Postgres plus pgvector is a clear winner. 
+Postgres with pgvector is available from GCP as AlloyDB. It is serverless, in that you don't have to worry about scaling per se. Amazon provides support for pgvector and Postgres as well via Aurora so again, it manages the cluster for you. It is easy to spin up Postgres cluster with pgvector support as well. When it comes to scalabillity, Postgres plus pgvector is a clear winner.
 
-You can also combine pgvector support with keyword search to combine the best of both worlds. We created a [simple library called vector](https://github.com/SpillwaveSolutions/vector-rag)-rag that shows how to combine pgvector with Postgres’s builtin support for keyword search. 
-
-PostgreSQL implements BM25-style ranking through its Full-Text Search (FTS) features:
-
-- `tsvector`: Stores preprocessed searchable text
-- `ts_rank_cd()`: Provides cover density ranking similar to BM25
-
-### Database Schema Changes
-
-Added a `tsvector` column to the `chunks` table:
-
-```sql
-ALTER TABLE chunks
-ADD COLUMN content_tsv tsvector
-GENERATED ALWAYS AS (to_tsvector('english', content)) STORED;
-
-CREATE INDEX idx_chunks_content_tsv
-ON chunks USING GIN (content_tsv);
-
-```
-
-The `tsvector` column:
-
-- Automatically generated from the `content` column
-- Lowercases text and removes stop words
-- Applies stemming (e.g., "running" → "run")
-- Indexed with GIN for fast searches
-
-### API Methods from Vector RAG python lib
-
-### BM25 style Search
-
-```python
-from vector_rag.api import VectorRAGAPI
-
-api = VectorRAGAPI()
-results = api.search_bm25(
-    project_id=1,
-    query_text="PostgreSQL tsvector",
-    page=1,
-    page_size=10,
-    rank_threshold=0.0,  # Minimum BM25 score
-    file_id=None,        # Optional: search specific file
-    metadata_filter={"category": "technical"}  # Optional filters
-)
-
-```
-
-### Hybrid Search
-
-```python
-results = api.search_hybrid(
-    project_id=1,
-    query_text="implement full text search",
-    page=1,
-    page_size=10,
-    vector_weight=0.5,   # Weight for semantic similarity (0-1)
-    bm25_weight=0.5,     # Weight for BM25 score (0-1)
-    similarity_threshold=0.0,  # Min vector similarity
-    rank_threshold=0.0,        # Min BM25 rank
-    file_id=None,
-    metadata_filter=None
-)
-
-# Access individual scores
-for result in results.results:
-    scores = result.chunk.metadata.get('_scores', {})
-    print(f"Vector: {scores.get('vector', 0)}")
-    print(f"BM25: {scores.get('bm25', 0)}")
-    print(f"Hybrid: {result.score}")
-
-```
-
-## Usage Examples
-
-### 1. Finding Exact Technical Terms
-
-```python
-# BM25 excels at finding exact matches
-results = api.search_bm25(
-    project_id=project_id,
-    query_text="ts_rank_cd PostgreSQL",
-    page_size=5
-)
-
-```
-
-### 2. Semantic Search with Keyword Backup
-
-```python
-# Hybrid search with vector-heavy weighting
-results = api.search_hybrid(
-    project_id=project_id,
-    query_text="how to implement search functionality",
-    vector_weight=0.7,  # 70% semantic
-    bm25_weight=0.3,    # 30% keyword
-)
-
-```
-
-### 3. Keyword-First Search
-
-```python
-# Hybrid search with BM25-heavy weighting
-results = api.search_hybrid(
-    project_id=project_id,
-    query_text="BM25 k1 parameter tuning",
-    vector_weight=0.3,  # 30% semantic
-    bm25_weight=0.7,    # 70% keyword
-)
-
-```
-
-See the docs for this library’s [full text search capabilities](https://github.com/SpillwaveSolutions/vector-rag/blob/develop/docs/bm25_hybrid_search.md). To learn more about using [Postgres as your VectorDB see this article](https://medium.com/@richardhightower/building-ai-powered-search-and-rag-with-postgresql-and-vector-embeddings-09af314dc2ff). 
+You can also combine pgvector support with keyword search to combine the best of both worlds. We created a [simple library called vector](https://github.com/SpillwaveSolutions/vector-rag)-rag that shows how to combine pgvector with Postgres's builtin support for keyword search.
 
 ### Production Deployment Patterns
 
-### 1. Read Replica Pattern
-
-```yaml
-# docker-compose.yml excerpt
-services:
-  postgres-primary:
-    image: pgvector/pgvector:pg16
-    environment:
-      POSTGRES_REPLICATION_MODE: master
-
-  postgres-replica:
-    image: pgvector/pgvector:pg16
-    environment:
-      POSTGRES_REPLICATION_MODE: slave
-      POSTGRES_MASTER_HOST: postgres-primary
-
-```
-
-You would most likely use AlloyDB if using GCP. It is serverless, in that you don’t have to worry about scaling per se. If on AWS, you would use Aurora and postgres with pgvector installed. On Azure, spin up a Postgres cluster with pgvector support installed. I have used all three and they are an easy way to get a scalable VectorDB with a cloud provider. 
-
-### 2. Connection Pooling
+### 1. Connection Pooling
 
 ```python
 from psycopg2 import pool
@@ -1555,134 +1862,15 @@ def search_with_pool(query_text):
         # ...
     finally:
         connection_pool.putconn(conn)
-
 ```
 
-### 3. Monitoring and Maintenance
+**Step-by-Step Explanation:**
 
-```sql
--- Monitor index performance
-SELECT
-    schemaname,
-    tablename,
-    indexname,
-    idx_scan,
-    idx_tup_read,
-    idx_tup_fetch
-FROM pg_stat_user_indexes
-WHERE indexname LIKE '%embedding%';
-
--- Analyze query performance
-EXPLAIN (ANALYZE, BUFFERS)
-SELECT * FROM documents
-ORDER BY embedding <=> %s
-LIMIT 10;
-
-```
-
-The code snippet demonstrates two important techniques for monitoring and optimizing PostgreSQL database performance when working with vector embeddings:
-
-### 1. Monitoring Index Usage
-
-The first query extracts statistics about indexes with "embedding" in their name from PostgreSQL's system catalog:
-
-- **schemaname/tablename/indexname**: Identifies the exact location of each index
-- **idx_scan**: Shows how many times each index has been used for queries - low numbers may indicate unused indexes
-- **idx_tup_read**: Counts index entries read during scans - high values with low idx_scan suggest inefficient index usage
-- **idx_tup_fetch**: Counts actual table rows fetched using the index - comparing with idx_tup_read helps identify index efficiency
-
-This query helps identify underutilized indexes (which waste resources) or overused indexes (which may need optimization).
-
-### 2. Analyzing Vector Search Query Performance
-
-The second command uses PostgreSQL's EXPLAIN ANALYZE with BUFFERS option to provide detailed execution statistics for a vector similarity search:
-
-- **EXPLAIN**: Shows the query execution plan
-- **ANALYZE**: Actually executes the query and reports real timing information
-- **BUFFERS**: Adds information about buffer usage (shared, local, and temporary blocks)
-- **ORDER BY embedding <=> %s**: Uses the vector distance operator to find similar vectors
-
-The output would show exactly how PostgreSQL executes the vector search, including:
-
-- Whether it uses the vector index (IVFFlat or HNSW)
-- How long each step takes
-- Memory/buffer usage during execution
-- Potential bottlenecks in the query execution
-
-These monitoring techniques are essential for optimizing vector search in production environments, especially when scaling to large datasets where performance tuning becomes critical.
-
-### Real-World Use Case: Multi-Tenant SaaS
-
-Here's how to implement vector search for a multi-tenant application:
-
-```python
-class MultiTenantVectorSearch:
-    def __init__(self, conn_string):
-        self.conn = psycopg2.connect(conn_string)
-        register_vector(self.conn)
-        self.model = SentenceTransformer('all-MiniLM-L6-v2')
-
-    def create_tenant_schema(self, tenant_id):
-        """Create isolated schema for each tenant"""
-        with self.conn.cursor() as cur:
-            cur.execute(f"CREATE SCHEMA IF NOT EXISTS tenant_{tenant_id}")
-            cur.execute(f"""
-                CREATE TABLE IF NOT EXISTS tenant_{tenant_id}.documents (
-                    id SERIAL PRIMARY KEY,
-                    content TEXT NOT NULL,
-                    embedding vector(384),
-                    metadata JSONB,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
-            cur.execute(f"""
-                CREATE INDEX ON tenant_{tenant_id}.documents
-                USING ivfflat (embedding vector_cosine_ops)
-            """)
-        self.conn.commit()
-
-    def search_tenant_documents(self, tenant_id, query, limit=10):
-        """Search within tenant's isolated data"""
-        query_embedding = self.model.encode(query)
-
-        with self.conn.cursor() as cur:
-            cur.execute(f"""
-                SELECT content, 1 - (embedding <=> %s) AS similarity
-                FROM tenant_{tenant_id}.documents
-                ORDER BY embedding <=> %s
-                LIMIT %s
-            """, (query_embedding.tolist(), query_embedding.tolist(), limit))
-
-            return cur.fetchall()
-
-```
-
-### Integration with RAG Systems
-
-pgvector excels in RAG architectures by storing context alongside embeddings:
-
-```python
-def rag_with_pgvector(question, context_limit=3):
-    # Retrieve relevant documents
-    query_emb = model.encode(question)
-
-    cursor.execute("""
-        SELECT content, metadata
-        FROM documents
-        ORDER BY embedding <=> %s
-        LIMIT %s
-    """, (query_emb.tolist(), context_limit))
-
-    # Build context from results
-    context = "\\n\\n".join([row[0] for row in cursor.fetchall()])
-
-    # Generate response with LLM
-    prompt = f"Context:\\n{context}\\n\\nQuestion: {question}\\nAnswer:"
-    # ... continue with LLM generation
-
-    return response
-
-```
+1. **Create Pool**: Initialize connection pool with min/max connections
+2. **Get Connection**: Obtain connection from pool when needed
+3. **Use Connection**: Perform vector search operations
+4. **Return Connection**: Always return connection to pool
+5. **Maximize Efficiency**: Reuse connections across requests
 
 ### Best Practices
 
@@ -1703,79 +1891,121 @@ Traditional keyword search often misses user intent. Searching "How do I get a r
 
 Transformer models convert text into embeddings: dense vectors capturing semantic essence. Models like BERT, RoBERTa, and newer options (E5, GTE) generate these embeddings. Similar meanings cluster together, regardless of wording differences.
 
-### Generating Semantic Embeddings with Sentence Transformers
+### Performance Analysis and Benchmarking
+
+Let's analyze the performance characteristics of different embedding models and search approaches:
 
 ```python
-# Ensure Python 3.12.9
-import sys
-print(f"Python: {sys.version}")
+# Benchmark different embedding models
+models_to_test = {
+    'all-MiniLM-L6-v2': {'dim': 384, 'description': 'Fast, lightweight'},
+    'all-mpnet-base-v2': {'dim': 768, 'description': 'Higher quality, slower'}
+}
 
-from sentence_transformers import SentenceTransformer
-import numpy as np
+# Test documents
+test_docs = ["Sample document " + str(i) for i in range(100)]
 
-# Load a pre-trained, efficient sentence transformer model
-model = SentenceTransformer('all-MiniLM-L6-v2')  # For production, benchmark newer models like E5 or GTE
+benchmark_results = []
 
-# Example sentences
-sentences = [
-    "How do I get a refund?",
-    "What is your return policy?",
-    "How can I reset my password?"
-]
+for model_name, info in models_to_test.items():
+    print(f"\nTesting {model_name}...")
+    test_model = SentenceTransformer(model_name)
+    
+    # Measure encoding time
+    start_time = time.time()
+    embeddings = test_model.encode(test_docs, show_progress_bar=False)
+    encoding_time = time.time() - start_time
+    
+    # Measure search time
+    query_emb = test_model.encode("Sample query")
+    start_time = time.time()
+    similarities = util.cos_sim(query_emb, embeddings)
+    search_time = time.time() - start_time
+    
+    benchmark_results.append({
+        'Model': model_name,
+        'Dimension': info['dim'],
+        'Description': info['description'],
+        'Encoding Time (ms/doc)': (encoding_time / len(test_docs)) * 1000,
+        'Search Time (ms)': search_time * 1000,
+        'Memory (MB)': embeddings.nbytes / 1024 / 1024
+    })
 
-# Generate embeddings
-embeddings = model.encode(sentences)
-print(embeddings.shape)  # Output: (3, 384)
-
+# Create comparison table
+benchmark_df = pd.DataFrame(benchmark_results)
+print("\n📊 Model Performance Comparison:")
+display(benchmark_df)
 ```
 
 **Step-by-Step Explanation:**
 
-1. **Verify Environment**: Confirm Python 3.12.9 is active
-2. **Import Libraries**: Load sentence transformers and NumPy
-3. **Initialize Model**: Load efficient pre-trained transformer
-4. **Define Sentences**: Create sample texts with varying topics
-5. **Generate Embeddings**: Convert to 384-dimensional vectors
-6. **Verify Output**: Confirm embedding dimensions
+1. **Define Test Models**: Compare lightweight vs. higher-quality models
+2. **Generate Test Data**: Create consistent dataset for benchmarking
+3. **Measure Encoding Speed**: Time to generate embeddings
+4. **Measure Search Speed**: Time to find similar vectors
+5. **Calculate Resource Usage**: Track memory consumption
 
-Each sentence maps to a 384-dimensional vector. Similar meanings produce nearby embeddings in vector space—the foundation of semantic search.
+### Building Vector Databases with FAISS
 
 For applications with thousands of documents, efficient retrieval proves critical. FAISS enables fast, scalable vector search. Production often uses managed databases like Pinecone, Weaviate, Qdrant, or Milvus for distributed querying.
 
-### Building and Querying a FAISS Index
+The notebook demonstrates creating an index decision guide:
 
 ```python
-import faiss
+# Create a decision guide visualization
+fig, ax = plt.subplots(figsize=(12, 8))
 
-# FAISS requires float32 arrays
-embeddings = embeddings.astype('float32')
-dimension = embeddings.shape[1]
+# Define index characteristics
+index_types = ['IndexFlatL2', 'IndexIVFFlat', 'IndexIVFPQ', 'IndexHNSWFlat']
+characteristics = ['Search Quality', 'Search Speed', 'Memory Efficiency', 'Build Speed']
 
-# For small datasets, use IndexFlatL2 (exact search)
-index = faiss.IndexFlatL2(dimension)
-index.add(embeddings)  # Add document embeddings
+# Scores (1-5 scale)
+scores = np.array([
+    [5, 1, 1, 5],  # IndexFlatL2
+    [4, 3, 3, 3],  # IndexIVFFlat
+    [3, 4, 5, 2],  # IndexIVFPQ
+    [4, 5, 2, 2],  # IndexHNSWFlat
+])
 
-# For large-scale (millions of vectors), consider compressed or inverted indices:
-# index = faiss.IndexIVFPQ(faiss.IndexFlatL2(dimension), dimension, nlist=100, m=8, nbits=8)
-# See FAISS docs for details.
+# Create heatmap
+im = ax.imshow(scores.T, cmap='RdYlGn', aspect='auto', vmin=1, vmax=5)
 
-# Encode a user query
-query = model.encode(["How do I get my money back?"]).astype('float32')
+# Set ticks and labels
+ax.set_xticks(np.arange(len(index_types)))
+ax.set_yticks(np.arange(len(characteristics)))
+ax.set_xticklabels(index_types)
+ax.set_yticklabels(characteristics)
 
-# Search for the top-2 most similar documents
-D, I = index.search(query, k=2)
-print(I)  # Indices of the most relevant documents
+# Rotate the tick labels
+plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
 
+# Add colorbar
+cbar = plt.colorbar(im, ax=ax)
+cbar.set_label('Score (1=Poor, 5=Excellent)', rotation=270, labelpad=20)
+
+# Add text annotations
+for i in range(len(index_types)):
+    for j in range(len(characteristics)):
+        text = ax.text(i, j, scores[i, j], ha="center", va="center", color="black")
+
+ax.set_title('FAISS Index Type Comparison', fontsize=16, fontweight='bold', pad=20)
+plt.tight_layout()
+plt.show()
+
+print("\n📊 Index Selection Guide:")
+print("• Small dataset (<10K vectors): Use IndexFlatL2 for exact search")
+print("• Medium dataset (10K-1M): Use IndexIVFFlat for good balance")
+print("• Large dataset with memory constraints: Use IndexIVFPQ")
+print("• Need very fast search: Use IndexHNSWFlat (but uses more memory)")
 ```
 
 **Step-by-Step Explanation:**
 
-1. **Convert to Float32**: FAISS requires specific data type
-2. **Create Index**: Initialize based on embedding dimensions
-3. **Add Embeddings**: Store document vectors in index
-4. **Encode Query**: Transform user question with same model
-5. **Search Index**: Retrieve most similar documents efficiently
-6. **Get Results**: `I` contains indices of best matches
+1. **Create Visual Guide**: Compare index types across key metrics
+2. **Score Characteristics**: Rate each index on important factors
+3. **Display Heatmap**: Visualize trade-offs clearly
+4. **Provide Recommendations**: Guide index selection by use case
+5. **Support Decision Making**: Help choose optimal index type
 
 For production workloads, use compressed indices (e.g., `IndexIVFPQ`) reducing memory and increasing speed. Managed vector databases offer cloud-native scaling.
 
@@ -1818,8 +2048,8 @@ Be sure to check out the first seven articles in this series:
 3. [Hands-On with Hugging Face: Building Your AI Workspace (Article 3)](https://medium.com/@richardhightower/hands-on-with-hugging-face-building-your-ai-workspace-b23c7e9be3a7)
 4. [Inside the Transformer: Architecture and Attention Demystified (Article 4)](https://medium.com/@richardhightower/inside-the-transformer-architecture-and-attention-demystified-39b2c13130bd)
 5. [Tokenization: The Gateway to Transformer Understanding (Article 5)](https://medium.com/@richardhightower/tokenization-the-gateway-to-transformer-understanding-f5d4c7ac7a18)
-6. [Prompt Engineering](https://medium.com/@richardhightower/prompt-engineering-fundamentals-unlocking-the-power-of-llms-367e35d2adaf) (Article 6)
-7. [Extending Transformers Beyond Language](https://medium.com/@richardhightower/introduction-extending-transformers-beyond-language-c1f3daa92652) (Article 7)
+6. [Prompt Engineering](https://medium.com/@richardhightower/prompt-engineering-fundamentals-unlocking-the-power-of-llms-367e35d2adaf) (Article 6)
+7. [Extending Transformers Beyond Language](https://medium.com/@richardhightower/introduction-extending-transformers-beyond-language-c1f3daa92652) (Article 7)
 8. [Customizing Pipelines and Data Workflows: Advanced Models and Efficient Processing](https://medium.com/@richardhightower/customizing-pipelines-and-data-workflows-advanced-models-and-efficient-processing-1ba9fabdca9a) (Article 8)
 
 Master semantic search and modern approaches—build AI applications that truly understand users. Let's continue!
@@ -1840,7 +2070,7 @@ Dive deeper into related topics from my series and blog:
 
 Reinforce your learning with these practical resources designed to help you implement semantic search concepts:
 
-For hands-on code, check the companion [GitHub repo](https://github.com/RichardHightower/art_hug_09), let’s follow along to load up the example and run them.
+For hands-on code, check the companion [GitHub repo](https://github.com/RichardHightower/art_hug_09), let's follow along to load up the example and run them.
 
 **Semantic Search and Information Retrieval with Transformers**
 
@@ -1878,7 +2108,7 @@ git clone git@github.com:RichardHightower/art_hug_09.git
     task setup
     ```
     
-2. Copy `.env.example` to `.env` and configure as needed
+2. Copy `.env.example` to `.env` and configure as needed
 
 **Project Structure**
 
@@ -1898,6 +2128,10 @@ git clone git@github.com:RichardHightower/art_hug_09.git
 ├── docs/
 │   ├── article9.md            # Original article
 │   └── article9i.md           # Enhanced article with additional examples
+├── notebooks/
+│   ├── tutorial.ipynb         # Interactive tutorial
+│   ├── faiss_vector_db.ipynb  # FAISS examples
+│   └── postgres_vector_db.ipynb # PostgreSQL pgvector examples
 ├── .env.example               # Environment template
 ├── Taskfile.yml               # Task automation
 └── pyproject.toml             # Poetry configuration
