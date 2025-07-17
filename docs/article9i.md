@@ -1,5 +1,7 @@
 # Article 9 - Semantic Search and Information Retrieval with Transformers
 
+![ChatGPT Image Jul 16, 2025, 07_55_37 PM.png](attachment:19762ab2-a274-4223-ac96-31b703969f3e:ChatGPT_Image_Jul_16_2025_07_55_37_PM.png)
+
 # From Keywords to Neural Understanding: The Transformer Revolution in Search
 
 Modern information retrieval has undergone a profound transformation. Where once we struggled with keyword limitations and boolean operators, today's semantic search unlocks the true meaning behind our questions. This chapter explores how transformer models have revolutionized search by bridging the gap between what users ask and what they truly seek.
@@ -46,14 +48,13 @@ mindmap
 
 ```
 
-**Step-by-Step Explanation:**
+**Topics covered: Semantic Search & Information Retrieval**
 
-- Root node focuses on **Semantic Search & Information Retrieval**
-- Branch shows transition **From Keywords to Understanding** with limitations and benefits
-- Branch covers **Transformer Embeddings** including models and adaptations
-- Branch details **Vector Databases & FAISS** for scalable implementation
-- Branch highlights **Business Applications** across industries
-- Branch includes **Modern Features** like RAG and benchmarking
+- Shows transition **From Keywords to Understanding** with limitations and benefits
+- Covers **Transformer Embeddings** including models and adaptations
+- Details **Vector Databases & FAISS** for scalable implementation
+- Highlights **Business Applications** across industries
+- Includes **Modern Features** like RAG and benchmarking
 
 ## Introduction: From Keyword Search to True Understanding
 
@@ -67,7 +68,7 @@ Now imagine a brilliant assistant who grasps that crimson equals red, and paraso
 
 Let's witness this transformation with Python. We'll contrast keyword and semantic search using the latest `sentence-transformers` library and production-ready patterns.
 
-This builds on my previous exploration of custom data workflows in [Custom Data Workflows Matter—Article 8](https://medium.com/@richardhightower/custom-data-workflows-matter-article-8-8d6e5ece9f2a), and for foundational transformer mechanics, see my blog post [Inside the Transformer: Architecture and Attention Demystified - A Complete Guide](https://cloudurable.com/blog/article-4-inside-the-transformer-architecture-and/).
+This builds on my previous exploration of custom data workflows in [Custom Data Workflows Matter—Article 8](https://medium.com/@richardhightower/customizing-pipelines-and-data-workflows-advanced-models-and-efficient-processing-1ba9fabdca9a), and for foundational transformer mechanics, see my blog post [Inside the Transformer: Architecture and Attention Demystified - A Complete Guide](https://cloudurable.com/blog/article-4-inside-the-transformer-architecture-and/).
 
 ### Setting Up Your Environment with Python 3.12.9
 
@@ -98,6 +99,17 @@ pip install sentence-transformers numpy faiss-cpu rank-bm25 chromadb openai
 ```
 
 ### Keyword Search vs. Semantic Search: A Modern Comparison
+
+Let's now explore the practical application of both keyword and semantic search methods with a detailed code example. The following listing demonstrates a side-by-side comparison that highlights the fundamental differences between these approaches.
+
+This example will show:
+
+- How traditional keyword search fails when exact word matching isn't present
+- How transformer-based semantic search correctly identifies relevant content through meaning
+- The practical implementation using the sentence-transformers library
+- Why semantic search produces superior results for natural language queries
+
+The code sample uses a realistic FAQ scenario where a user's query about forgotten login credentials should match documents about password recovery, despite not sharing the same keywords:
 
 ```python
 # Example FAQ documents
@@ -162,7 +174,7 @@ Transformers fuel this leap. They absorb context and nuance from massive dataset
 
 🔎 **Production Note:** Real-world semantic search stores embeddings in vector databases (FAISS, Milvus, Weaviate) for efficient scaling to millions of documents. We'll explore this shortly.
 
-🌐 **Looking Ahead:** Recent advances include retrieval-augmented generation (RAG), Mixture of Experts architectures, and multimodal search combining text, images, and video. For a deeper dive into RAG's evolution and why it's far from dead, check my analysis in [Is RAG Dead? Anthropic Says No](https://medium.com/@richardhightower/is-rag-dead-anthropic-says-no-may-28-2025). Complement this with my blog on multimodal extensions in [Beyond Language: Transformers for Vision, Audio, and Multimodal AI - Article 7](https://cloudurable.com/blog/article-7-beyond-language-transformers-for-vision/), which explores how semantic search evolves beyond text.
+🌐 **Looking Ahead:** Recent advances include retrieval-augmented generation (RAG), Mixture of Experts architectures, and multimodal search combining text, images, and video. For a deeper dive into RAG's evolution and why it's far from dead, check my analysis in [Is RAG Dead? Anthropic Says No](https://medium.com/@richardhightower/is-rag-dead-anthropic-says-no-290acc7bd808). Complement this with my blog on multimodal extensions in [Beyond Language: Transformers for Vision, Audio, and Multimodal AI - Article 7](https://cloudurable.com/blog/article-7-beyond-language-transformers-for-vision/), which explores how semantic search evolves beyond text.
 
 ## Introduction to Semantic Search
 
@@ -254,7 +266,7 @@ print("Semantic Search Top Result:", documents[top_idx])
 
 Try modifying the query to "forgot login details"—watch how results shift. This demonstrates semantic search uncovering relevance that keyword search misses entirely.
 
-Production systems scale by storing embeddings in vector databases (FAISS, Milvus, Pinecone, Weaviate), enabling lightning-fast similarity search across millions of documents.
+Production systems scale by storing embeddings in vector databases (FAISS, Milvus, Pinecone, Weaviate, Postgres + VectorDB, AlloyDB), enabling lightning-fast similarity search across millions of documents.
 
 Modern engines combine keyword and semantic search (hybrid search) maximizing precision and recall. Reranking models (cross-encoders, LLMs) further refine top results.
 
@@ -288,6 +300,7 @@ semantic_scores = util.cos_sim(query_emb, doc_embs)[0].numpy()
 hybrid_scores = 0.4 * np.array(bm25_scores) + 0.6 * semantic_scores
 top_idx = np.argsort(-hybrid_scores)[0]
 print("Hybrid Top Result:", documents[top_idx])
+
 ```
 
 **Step-by-Step Explanation:**
@@ -306,7 +319,7 @@ Semantic search isn't merely technical evolution—it's competitive advantage. R
 
 1. **Enterprise Knowledge Bases:** Employees use varied terminology. Semantic search bridges vocabulary gaps, surfacing answers regardless of phrasing.
 2. **Customer Support Automation:** Intent-aware chatbots understand "How can I get my money back?" matches refund policies—without the word "refund."
-3. **Legal and Compliance Discovery:** Legal teams find relevant precedents through meaning, not just keywords—saving hours, reducing risk. This aligns with enterprise use cases I've covered in [The Economics of Deploying Large Language Models: Costs, Value, and 99.7% Savings](https://medium.com/@richardhightower/the-economics-of-deploying-large-language-models-costs-value-and-99-7-savings-jul-3-2025), and for scaling such systems, refer to my blog post [Scaling Up: Debugging, Optimization, and Distributed Training - Article 17](https://cloudurable.com/blog/scaling-up-debugging-optimization-a/).
+3. **Legal and Compliance Discovery:** Legal teams find relevant precedents through meaning, not just keywords—saving hours, reducing risk. This aligns with enterprise use cases I've covered in [The Economics of Deploying Large Language Models: Costs, Value, and 99.7% Savings](https://medium.com/@richardhightower/the-economics-of-deploying-large-language-models-costs-value-and-99-7-savings-d1cd9a84fcbe), and for scaling such systems, refer to my blog post [Scaling Up: Debugging, Optimization, and Distributed Training - Article 17](https://cloudurable.com/blog/scaling-up-debugging-optimization-a/).
 
 Production deployments leverage scalable vector databases for efficient embedding retrieval, often combining keyword and semantic methods for peak accuracy.
 
@@ -357,6 +370,12 @@ print(f"Recall: {recall:.2f}")
 4. **Compute Recall**: Fraction of relevant that were retrieved
 
 Practice requires averaging metrics across many queries. For ranking metrics (MRR, NDCG), libraries like Hugging Face's `evaluate`, `scikit-learn`, or `pytrec_eval` automate calculations.
+
+**Mean Reciprocal Rank (MRR):** This metric focuses on the position of the first relevant result. The reciprocal rank is 1 divided by the rank position of the first relevant document. For example, if the first relevant document appears at position 3, the reciprocal rank is 1/3 = 0.33. MRR averages this value across multiple queries. Higher MRR values (closer to 1.0) indicate better search performance where relevant results appear early in the results list.
+
+**Normalized Discounted Cumulative Gain (NDCG):** This metric evaluates the entire ranking quality, not just the first relevant hit. It considers both the relevance of results and their positions. NDCG gives higher weight to relevant documents appearing earlier in search results, following the principle that users typically focus on top results. The metric is "normalized" by comparing the actual ranking to an ideal ranking where all relevant documents appear first in order of relevance. NDCG ranges from 0 to 1, with 1 representing perfect ranking.
+
+Both metrics are essential for evaluating real-world search systems where result ordering significantly impacts user experience. MRR is simpler and focuses on finding the first correct answer quickly, while NDCG provides a more comprehensive view of overall ranking quality across multiple positions.
 
 Choose metrics matching your goals. Customer support needs high recall—never miss helpful articles. Legal search demands high precision—avoid irrelevant results.
 
@@ -425,7 +444,7 @@ Practical impact? Embeddings power:
 - Cross-language search focusing on meaning
 - Retrieval-augmented generation (RAG) combining search with LLMs for reasoning
 
-I've explored practical RAG implementations in [Beyond Chat: Enhancing LiteLLM Multi-Provider App with RAG, Streaming, and AWS Bedrock](https://medium.com/@richardhightower/beyond-chat-enhancing-litellm-multi-provider-app-with-rag-streaming-and-aws-bedrock-may-20-2025). For the foundational step of tokenization that underpins embeddings, see my blog post [Article 5: Tokenization - Converting Text to Numbers for Neural Networks](https://cloudurable.com/blog/article-5-tokenization-converting-text-to-number/).
+I've explored practical RAG implementations in [Beyond Chat: Enhancing LiteLLM Multi-Provider App with RAG, Streaming, and AWS Bedrock](https://medium.com/@richardhightower/beyond-chat-enhancing-litellm-multi-provider-app-with-rag-streaming-and-aws-bedrock-65767dd34a53). For the foundational step of tokenization that underpins embeddings, see my blog post [Article 5: Tokenization - Converting Text to Numbers for Neural Networks](https://cloudurable.com/blog/article-5-tokenization-converting-text-to-number/).
 
 **Bottom line**: Embeddings translate language into comparable meanings, not just matched strings.
 
@@ -466,7 +485,7 @@ print(embeddings.shape)  # Output: (2, 384)
 
 Similar sentences produce similar vectors, enabling meaningful comparison. For other languages or industries, choose models trained on relevant data. Modern APIs support longer sequences—essential for document search and RAG.
 
-For state-of-the-art performance, explore Google Gemini Embedding, OpenAI's latest APIs, or top MTEB models supporting extended inputs, superior accuracy, and broader language coverage.
+For state-of-the-art performance, explore Google Gemini Embedding, OpenAI's latest APIs, or top MTEB models supporting extended inputs, superior accuracy, and broader language coverage. If you are using AWS Bedrock, Cohere’s embeddings are probably your best bet. 
 
 ### Modern Embedding API Example with OpenAI
 
@@ -529,9 +548,10 @@ top_doc = docs[np.argmax(scores)]
 
 # RAG: Use retrieved doc as context for LLM
 generator = pipeline('text-generation', model='gpt2')  # Replace with fine-tuned model in production
-prompt = f"Context: {top_doc}\nQuestion: {query}\nAnswer:"
+prompt = f"Context: {top_doc}\\nQuestion: {query}\\nAnswer:"
 response = generator(prompt, max_length=50)[0]['generated_text']
 print("RAG Response:", response)
+
 ```
 
 **Step-by-Step Explanation:**
@@ -585,6 +605,8 @@ Models like `'paraphrase-multilingual-MiniLM-L12-v2'` support 50+ languages. Goo
 
 ### Generating Multilingual Embeddings
 
+For effective multilingual search, we need specialized embedding models that understand semantic meaning across different languages. Let's explore how to generate these powerful cross-language embeddings.
+
 ```python
 multi_model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
 
@@ -631,7 +653,7 @@ Right model choice boosts search quality and user satisfaction dramatically.
 
 Embeddings transform text into semantic vectors, enabling meaning-based search. Sentence transformers and modern APIs simplify generation and storage at scale. Match models to your language, domain, and context needs using MTEB benchmarks.
 
-Building on this, my guide [The Developer's Guide to AI File Processing with AutoRAG support: Claude vs. Bedrock vs. OpenAI](https://medium.com/@richardhightower/the-developers-guide-to-ai-file-processing-with-autorag-support-claude-vs-bedrock-vs-openai-may-29-2025) compares RAG implementations across providers. For customizing models via fine-tuning, which enhances domain-specific embeddings, check my blog [Mastering Fine-Tuning: Transforming General Models into Domain Specialists - Article 10](https://cloudurable.com/blog/advanced-fine-tuning-chat-templates/).
+Building on this, my guide [The Developer's Guide to AI File Processing with AutoRAG support: Claude vs. Bedrock vs. OpenAI](https://medium.com/@richardhightower/the-developers-guide-to-ai-file-processing-with-autorag-support-claude-vs-bedrock-vs-openai-bd8b199d54c9) compares RAG implementations across providers. For customizing models via fine-tuning, which enhances domain-specific embeddings, check my blog [Mastering Fine-Tuning: Transforming General Models into Domain Specialists - Article 10](https://cloudurable.com/blog/advanced-fine-tuning-chat-templates/).
 
 **Try this**: Embed three sentences from your domain. Compare their vectors—notice meaning clusters. For production, experiment with Qdrant, Milvus, or Chroma for managed search.
 
@@ -827,6 +849,7 @@ collection.add(ids=["1", "2"], embeddings=embeddings, documents=docs)
 query_emb = model.encode(["Similar query"]).tolist()
 results = collection.query(query_embeddings=query_emb, n_results=1)
 print("Top Match:", results['documents'][0][0])
+
 ```
 
 **Step-by-Step Explanation:**
@@ -968,26 +991,27 @@ flowchart TB
         Indexes[B-tree, GIN, etc.]
         VectorIndexes[IVFFlat, HNSW Indexes]
     end
-    
+
     subgraph pgvector Extension
         VectorOps[Vector Operations]
         SimilarityFuncs[Similarity Functions]
         IndexTypes[Index Types]
     end
-    
+
     Application[Application Layer] --> SQL[SQL Queries]
     Application --> VectorSearch[Vector Search]
-    
+
     SQL --> Tables
     VectorSearch --> VectorTable
-    
+
     VectorTable --> VectorOps
     VectorOps --> SimilarityFuncs
     VectorTable --> VectorIndexes
-    
+
     style PostgreSQL Database fill:#e3f2fd,stroke:#1976d2
     style pgvector Extension fill:#f3e5f5,stroke:#7b1fa2
     style Application fill:#e8f5e9,stroke:#388e3c
+
 ```
 
 **Step-by-Step Explanation:**
@@ -1019,14 +1043,15 @@ First, install PostgreSQL with pgvector extension. We'll use Docker for quick se
 docker-compose up -d postgres-vector
 
 # Or direct Docker command
-docker run -d \
-  --name pgvector-demo \
-  -e POSTGRES_PASSWORD=postgres \
-  -p 5433:5432 \
+docker run -d \\
+  --name pgvector-demo \\
+  -e POSTGRES_PASSWORD=postgres \\
+  -p 5433:5432 \\
   pgvector/pgvector:pg16
 
 # Verify connection
 psql -h localhost -p 5433 -U postgres -d postgres
+
 ```
 
 ### Creating Vector-Enabled Tables
@@ -1047,6 +1072,7 @@ CREATE TABLE documents (
 -- Create index for fast similarity search
 CREATE INDEX ON documents USING ivfflat (embedding vector_cosine_ops)
 WITH (lists = 100);
+
 ```
 
 **Step-by-Step Explanation:**
@@ -1110,7 +1136,8 @@ cursor.execute("""
 
 for row in cursor.fetchall():
     print(f"Content: {row[0]}")
-    print(f"Similarity: {row[1]:.3f}\n")
+    print(f"Similarity: {row[1]:.3f}\\n")
+
 ```
 
 **Step-by-Step Explanation:**
@@ -1124,26 +1151,76 @@ for row in cursor.fetchall():
 
 ### Advanced pgvector Features
 
-#### 1. Multiple Index Types
+### 1. Multiple Index Types
 
 pgvector supports different index types for various use cases:
 
 ```sql
 -- IVFFlat: Good balance of speed and accuracy
-CREATE INDEX idx_ivfflat ON documents 
-USING ivfflat (embedding vector_cosine_ops) 
+CREATE INDEX idx_ivfflat ON documents
+USING ivfflat (embedding vector_cosine_ops)
 WITH (lists = 100);
 
 -- HNSW: Faster queries, more memory, better for static data
-CREATE INDEX idx_hnsw ON documents 
-USING hnsw (embedding vector_cosine_ops) 
+CREATE INDEX idx_hnsw ON documents
+USING hnsw (embedding vector_cosine_ops)
 WITH (m = 16, ef_construction = 64);
 
 -- No index: Exact search for small datasets
 -- Simply omit the CREATE INDEX statement
+
 ```
 
-#### 2. Hybrid Search with Filters
+### Comparing IVFFlat and HNSW Indexes
+
+Both IVFFlat and HNSW are approximate nearest neighbor (ANN) indexes that accelerate vector search, but they have different characteristics that make them suitable for different scenarios:
+
+| Characteristic | IVFFlat | HNSW |
+| --- | --- | --- |
+| **Query Speed** | Good | Excellent (2-10x faster) |
+| **Build Time** | Fast | Slow (can be 10x slower) |
+| **Memory Usage** | Lower | Higher (typically 2-4x more) |
+| **Update Handling** | Better for dynamic data | Better for static data |
+| **Accuracy** | Good with tuning | Excellent with proper parameters |
+| **Build Parameters** | `lists`(partition count) | `m`(max connections),`ef_construction`(build quality) |
+| **Query Parameters** | `probes`(partitions to check) | `ef_search`(candidate set size) |
+
+### When to Use IVFFlat
+
+- **Frequently updated data:** Better handles insertions and updates without complete rebuilds
+- **Memory-constrained environments:** Uses less RAM than HNSW
+- **Quick index building:** Creates indexes faster, especially for large datasets
+- **Balanced performance needs:** Good compromise between speed, memory, and accuracy
+
+### When to Use HNSW
+
+- **Query-intensive workloads:** Significantly faster search performance
+- **Static or append-only data:** Where index rebuilds are infrequent
+- **Higher accuracy requirements:** Delivers better recall at same k value
+- **RAM-rich environments:** When memory isn't a primary constraint
+
+### Maintenance Considerations
+
+**IVFFlat:**
+
+1. **Rebuilding Frequency:** Performs well with incremental updates but benefits from periodic reindexing (weekly/monthly) when >20% of data changes
+2. **Parameter Tuning:** May need to adjust `lists` as dataset grows (rule of thumb: lists = √n/10 where n is row count)
+3. **Rebalancing:** Less sensitive to data distribution changes than HNSW
+
+**HNSW:**
+
+1. **Rebuilding Complexity:** More impacted by updates; consider full rebuilds after significant changes (>10% of data)
+2. **Build-Time vs Query-Time Tradeoff:** Higher `ef_construction` values create better indexes but take longer to build
+3. **Runtime Parameter Adjustment:** Can tune `ef_search` at query time without rebuilding index
+
+**Memory Usage Estimation:**
+
+- **IVFFlat:** Approximately 1.1x the size of your raw vector data
+- **HNSW:** Approximately 1.5-2.5x the size of your raw vector data (varies with `m` parameter)
+
+In practical implementations, consider starting with IVFFlat for development and testing, then benchmark against HNSW for production if query performance becomes a bottleneck and your data is relatively static.
+
+### 2. Hybrid Search with Filters
 
 Combine vector similarity with SQL conditions:
 
@@ -1155,9 +1232,21 @@ WHERE created_at > NOW() - INTERVAL '7 days'
   AND metadata->>'category' = 'technical'
 ORDER BY embedding <=> %s
 LIMIT 5;
+
 ```
 
-#### 3. Distance Functions
+This SQL query demonstrates hybrid search in pgvector, combining vector similarity with traditional SQL filtering. Let's break down what it does:
+
+1. **Semantic Search with Filtering:** The query finds documents semantically similar to a query vector, but only within documents that meet specific criteria
+2. **Time-Based Filtering:** The `WHERE created_at > NOW() - INTERVAL '7 days'` clause restricts results to recent documents only
+3. **Metadata Filtering:** The `AND metadata->>'category' = 'technical'` clause filters by document category using JSON path operators
+4. **Similarity Calculation:** `1 - (embedding <=>; %s) AS similarity` converts cosine distance to similarity score (0-1 scale)
+5. **Ordering:** Results are sorted by vector similarity using the cosine distance operator `<=>;`
+6. **Result Limiting:** Only returns the top 5 most relevant matches
+
+This powerful approach combines the best of both worlds: the semantic understanding of vector search with the precise filtering capabilities of SQL. It's ideal for applications that need context-aware search but also require filtering by traditional database attributes.
+
+### 3. Distance Functions
 
 pgvector supports multiple distance metrics:
 
@@ -1170,11 +1259,62 @@ ORDER BY embedding <-> query_vector
 
 -- Inner product (for non-normalized vectors)
 ORDER BY embedding <#> query_vector
+
 ```
+
+The choice of distance metric in vector search significantly impacts result quality and relevance. pgvector supports three primary distance functions, each with specific use cases:
+
+### Cosine Distance (`<=>`)
+
+**Formula:** 1 - (A·B)/(|A|·|B|)
+
+**Range:** 0 (identical) to 2 (opposite)
+
+**Best for:** Text embeddings and semantic similarity
+
+- **Advantages:** Normalizes for vector magnitude, focusing purely on direction/angle
+- **When to use:** Most transformer models produce normalized embeddings where cosine distance works best
+- **Example use case:** Semantic document search, where document length shouldn't affect relevance
+
+### 2. Euclidean Distance (`<->`)
+
+**Formula:** √Σ(Aᵢ - Bᵢ)²
+
+**Range:** 0 (identical) to ∞
+
+**Best for:** Physical or spatial data
+
+- **Advantages:** Intuitive physical distance interpretation
+- **When to use:** Non-normalized embeddings, image feature vectors, or geometric data
+- **Example use case:** Facial recognition, image similarity, geographical positioning
+
+### 3. Inner Product (`<#>`)
+
+**Formula:** -A·B (negative dot product)
+
+**Range:** -∞ to ∞
+
+**Best for:** Maximum dot product search (MIPS)
+
+- **Advantages:** Faster computation, works well with specific ML models
+- **When to use:** Recommendation systems, when vectors are NOT normalized
+- **Example use case:** Product recommendations where magnitude encodes relevance/popularity
+
+### Selection Guidelines
+
+| **Use Case** | **Recommended Metric** | **Reason** |
+| --- | --- | --- |
+| Semantic text search | Cosine (<=>) | Ignores magnitude differences in text embeddings |
+| Image similarity | Euclidean (<->) | Preserves spatial relationships in feature space |
+| Recommendations | Inner Product (<#>) | Captures preference strength and similarity |
+| Pre-normalized vectors | Cosine or Euclidean | Equivalent when vectors are normalized |
+| Non-normalized with magnitude importance | Inner Product | Considers both direction and magnitude |
+
+For most transformer-based text embeddings (Open AI embeddings, Cohere embeddings, BERT, MPNet, MiniLM), cosine distance is the recommended default as these models are typically trained to produce normalized vectors where angular similarity matters most.
 
 ### Performance Optimization
 
-#### 1. Index Selection Strategy
+### 1. Index Selection Strategy
 
 ```python
 def choose_index_type(num_vectors, update_frequency):
@@ -1185,24 +1325,44 @@ def choose_index_type(num_vectors, update_frequency):
         return "IVFFlat - handles updates better"
     else:
         return "HNSW - fastest queries for static data"
+
 ```
 
-#### 2. Batch Operations
+This function provides a simple decision framework for choosing the right pgvector index type based on two key factors:
+
+1. **Dataset Size Assessment:** For small datasets (under 10,000 vectors), the function recommends skipping indexing entirely, as PostgreSQL can efficiently scan small tables without specialized indexes
+2. **Update Frequency Evaluation:** For frequently updated data, IVFFlat is recommended due to its better handling of insertions and modifications
+3. **Default to Performance:** For static or infrequently changing datasets, HNSW is recommended for its superior query performance
+
+This strategy balances performance needs with operational characteristics, ensuring optimal vector search experiences across different use cases.
+
+### 2. Batch Operations
 
 ```python
 # Efficient batch insertion
 def batch_insert_embeddings(documents, batch_size=100):
     embeddings = model.encode(documents, batch_size=32)
-    
+
     # Use COPY for fastest insertion
     with cursor.copy(
         "COPY documents (content, embedding) FROM STDIN"
     ) as copy:
         for doc, emb in zip(documents, embeddings):
             copy.write_row([doc, emb.tolist()])
+
 ```
 
-#### 3. Query Optimization
+This code demonstrates an efficient method for batch inserting document embeddings into a PostgreSQL database using pgvector. Let's analyze what it does:
+
+1. **Batch Processing with Transformer Model:** The function processes multiple documents at once, generating embeddings in batches of 32 using a transformer model. This is more efficient than encoding documents one by one.
+2. **PostgreSQL COPY Command:** Instead of using individual INSERT statements, the code leverages PostgreSQL's COPY protocol, which is significantly faster for bulk operations.
+3. **Parallel Data Insertion:** The function pairs each document with its corresponding embedding vector and inserts them together in a single operation.
+4. **Vector Format Conversion:** The embeddings are converted from NumPy arrays to Python lists using `tolist()` to ensure compatibility with the database.
+5. **Performance Benefits:** This approach can be 10-100x faster than individual inserts when adding large numbers of vectors to a database.
+
+This pattern is particularly valuable when initially populating a vector database or when performing batch updates, significantly reducing the time required for database operations while maintaining data integrity.
+
+### 3. Query Optimization
 
 ```sql
 -- Optimize HNSW search performance
@@ -1218,6 +1378,7 @@ SELECT content, 1 - (embedding <=> %s) AS similarity
 FROM candidates
 ORDER BY embedding <=> %s
 LIMIT 10;
+
 ```
 
 ### Comparing pgvector with FAISS
@@ -1233,9 +1394,126 @@ LIMIT 10;
 | **Index Types** | More options | IVFFlat, HNSW |
 | **Updates** | Limited | Full CRUD support |
 
+Postgres with pgvector is available from GCP as AlloyDB. It is serverless, in that you don’t have to worry about scaling per se. Amazon provides support for pgvector and Postgres as well via Aurora so again, it manages the cluster for you. It is easy to spin up Postgres cluster with pgvector support as well. When it comes to scalabillity, Postgres plus pgvector is a clear winner. 
+
+You can also combine pgvector support with keyword search to combine the best of both worlds. We created a [simple library called vector](https://github.com/SpillwaveSolutions/vector-rag)-rag that shows how to combine pgvector with Postgres’s builtin support for keyword search. 
+
+PostgreSQL implements BM25-style ranking through its Full-Text Search (FTS) features:
+
+- `tsvector`: Stores preprocessed searchable text
+- `ts_rank_cd()`: Provides cover density ranking similar to BM25
+
+### Database Schema Changes
+
+Added a `tsvector` column to the `chunks` table:
+
+```sql
+ALTER TABLE chunks
+ADD COLUMN content_tsv tsvector
+GENERATED ALWAYS AS (to_tsvector('english', content)) STORED;
+
+CREATE INDEX idx_chunks_content_tsv
+ON chunks USING GIN (content_tsv);
+
+```
+
+The `tsvector` column:
+
+- Automatically generated from the `content` column
+- Lowercases text and removes stop words
+- Applies stemming (e.g., "running" → "run")
+- Indexed with GIN for fast searches
+
+### API Methods from Vector RAG python lib
+
+### BM25 style Search
+
+```python
+from vector_rag.api import VectorRAGAPI
+
+api = VectorRAGAPI()
+results = api.search_bm25(
+    project_id=1,
+    query_text="PostgreSQL tsvector",
+    page=1,
+    page_size=10,
+    rank_threshold=0.0,  # Minimum BM25 score
+    file_id=None,        # Optional: search specific file
+    metadata_filter={"category": "technical"}  # Optional filters
+)
+
+```
+
+### Hybrid Search
+
+```python
+results = api.search_hybrid(
+    project_id=1,
+    query_text="implement full text search",
+    page=1,
+    page_size=10,
+    vector_weight=0.5,   # Weight for semantic similarity (0-1)
+    bm25_weight=0.5,     # Weight for BM25 score (0-1)
+    similarity_threshold=0.0,  # Min vector similarity
+    rank_threshold=0.0,        # Min BM25 rank
+    file_id=None,
+    metadata_filter=None
+)
+
+# Access individual scores
+for result in results.results:
+    scores = result.chunk.metadata.get('_scores', {})
+    print(f"Vector: {scores.get('vector', 0)}")
+    print(f"BM25: {scores.get('bm25', 0)}")
+    print(f"Hybrid: {result.score}")
+
+```
+
+## Usage Examples
+
+### 1. Finding Exact Technical Terms
+
+```python
+# BM25 excels at finding exact matches
+results = api.search_bm25(
+    project_id=project_id,
+    query_text="ts_rank_cd PostgreSQL",
+    page_size=5
+)
+
+```
+
+### 2. Semantic Search with Keyword Backup
+
+```python
+# Hybrid search with vector-heavy weighting
+results = api.search_hybrid(
+    project_id=project_id,
+    query_text="how to implement search functionality",
+    vector_weight=0.7,  # 70% semantic
+    bm25_weight=0.3,    # 30% keyword
+)
+
+```
+
+### 3. Keyword-First Search
+
+```python
+# Hybrid search with BM25-heavy weighting
+results = api.search_hybrid(
+    project_id=project_id,
+    query_text="BM25 k1 parameter tuning",
+    vector_weight=0.3,  # 30% semantic
+    bm25_weight=0.7,    # 70% keyword
+)
+
+```
+
+See the docs for this library’s [full text search capabilities](https://github.com/SpillwaveSolutions/vector-rag/blob/develop/docs/bm25_hybrid_search.md). To learn more about using [Postgres as your VectorDB see this article](https://medium.com/@richardhightower/building-ai-powered-search-and-rag-with-postgresql-and-vector-embeddings-09af314dc2ff). 
+
 ### Production Deployment Patterns
 
-#### 1. Read Replica Pattern
+### 1. Read Replica Pattern
 
 ```yaml
 # docker-compose.yml excerpt
@@ -1244,15 +1522,18 @@ services:
     image: pgvector/pgvector:pg16
     environment:
       POSTGRES_REPLICATION_MODE: master
-      
+
   postgres-replica:
     image: pgvector/pgvector:pg16
     environment:
       POSTGRES_REPLICATION_MODE: slave
       POSTGRES_MASTER_HOST: postgres-primary
+
 ```
 
-#### 2. Connection Pooling
+You would most likely use AlloyDB if using GCP. It is serverless, in that you don’t have to worry about scaling per se. If on AWS, you would use Aurora and postgres with pgvector installed. On Azure, spin up a Postgres cluster with pgvector support installed. I have used all three and they are an easy way to get a scalable VectorDB with a cloud provider. 
+
+### 2. Connection Pooling
 
 ```python
 from psycopg2 import pool
@@ -1274,13 +1555,14 @@ def search_with_pool(query_text):
         # ...
     finally:
         connection_pool.putconn(conn)
+
 ```
 
-#### 3. Monitoring and Maintenance
+### 3. Monitoring and Maintenance
 
 ```sql
 -- Monitor index performance
-SELECT 
+SELECT
     schemaname,
     tablename,
     indexname,
@@ -1291,11 +1573,43 @@ FROM pg_stat_user_indexes
 WHERE indexname LIKE '%embedding%';
 
 -- Analyze query performance
-EXPLAIN (ANALYZE, BUFFERS) 
+EXPLAIN (ANALYZE, BUFFERS)
 SELECT * FROM documents
 ORDER BY embedding <=> %s
 LIMIT 10;
+
 ```
+
+The code snippet demonstrates two important techniques for monitoring and optimizing PostgreSQL database performance when working with vector embeddings:
+
+### 1. Monitoring Index Usage
+
+The first query extracts statistics about indexes with "embedding" in their name from PostgreSQL's system catalog:
+
+- **schemaname/tablename/indexname**: Identifies the exact location of each index
+- **idx_scan**: Shows how many times each index has been used for queries - low numbers may indicate unused indexes
+- **idx_tup_read**: Counts index entries read during scans - high values with low idx_scan suggest inefficient index usage
+- **idx_tup_fetch**: Counts actual table rows fetched using the index - comparing with idx_tup_read helps identify index efficiency
+
+This query helps identify underutilized indexes (which waste resources) or overused indexes (which may need optimization).
+
+### 2. Analyzing Vector Search Query Performance
+
+The second command uses PostgreSQL's EXPLAIN ANALYZE with BUFFERS option to provide detailed execution statistics for a vector similarity search:
+
+- **EXPLAIN**: Shows the query execution plan
+- **ANALYZE**: Actually executes the query and reports real timing information
+- **BUFFERS**: Adds information about buffer usage (shared, local, and temporary blocks)
+- **ORDER BY embedding <=> %s**: Uses the vector distance operator to find similar vectors
+
+The output would show exactly how PostgreSQL executes the vector search, including:
+
+- Whether it uses the vector index (IVFFlat or HNSW)
+- How long each step takes
+- Memory/buffer usage during execution
+- Potential bottlenecks in the query execution
+
+These monitoring techniques are essential for optimizing vector search in production environments, especially when scaling to large datasets where performance tuning becomes critical.
 
 ### Real-World Use Case: Multi-Tenant SaaS
 
@@ -1307,7 +1621,7 @@ class MultiTenantVectorSearch:
         self.conn = psycopg2.connect(conn_string)
         register_vector(self.conn)
         self.model = SentenceTransformer('all-MiniLM-L6-v2')
-        
+
     def create_tenant_schema(self, tenant_id):
         """Create isolated schema for each tenant"""
         with self.conn.cursor() as cur:
@@ -1322,15 +1636,15 @@ class MultiTenantVectorSearch:
                 )
             """)
             cur.execute(f"""
-                CREATE INDEX ON tenant_{tenant_id}.documents 
+                CREATE INDEX ON tenant_{tenant_id}.documents
                 USING ivfflat (embedding vector_cosine_ops)
             """)
         self.conn.commit()
-        
+
     def search_tenant_documents(self, tenant_id, query, limit=10):
         """Search within tenant's isolated data"""
         query_embedding = self.model.encode(query)
-        
+
         with self.conn.cursor() as cur:
             cur.execute(f"""
                 SELECT content, 1 - (embedding <=> %s) AS similarity
@@ -1338,8 +1652,9 @@ class MultiTenantVectorSearch:
                 ORDER BY embedding <=> %s
                 LIMIT %s
             """, (query_embedding.tolist(), query_embedding.tolist(), limit))
-            
+
             return cur.fetchall()
+
 ```
 
 ### Integration with RAG Systems
@@ -1350,22 +1665,23 @@ pgvector excels in RAG architectures by storing context alongside embeddings:
 def rag_with_pgvector(question, context_limit=3):
     # Retrieve relevant documents
     query_emb = model.encode(question)
-    
+
     cursor.execute("""
         SELECT content, metadata
         FROM documents
         ORDER BY embedding <=> %s
         LIMIT %s
     """, (query_emb.tolist(), context_limit))
-    
+
     # Build context from results
-    context = "\n\n".join([row[0] for row in cursor.fetchall()])
-    
+    context = "\\n\\n".join([row[0] for row in cursor.fetchall()])
+
     # Generate response with LLM
-    prompt = f"Context:\n{context}\n\nQuestion: {question}\nAnswer:"
+    prompt = f"Context:\\n{context}\\n\\nQuestion: {question}\\nAnswer:"
     # ... continue with LLM generation
-    
+
     return response
+
 ```
 
 ### Best Practices
@@ -1381,7 +1697,7 @@ def rag_with_pgvector(question, context_limit=3):
 
 PostgreSQL with pgvector brings enterprise-grade vector search to existing PostgreSQL deployments. While pure vector databases like FAISS offer ultimate performance, pgvector provides the best integration with relational data, ACID guarantees, and mature operational tooling. Choose pgvector when you need vector search alongside traditional database features, existing PostgreSQL infrastructure, or strong consistency requirements.
 
-## Summary and Key Takeaways
+## Key Takeaways
 
 Traditional keyword search often misses user intent. Searching "How do I get a refund?" might overlook "Return Policy" documents. Semantic search solves this by understanding **meaning and context**—not just exact words.
 
@@ -1494,10 +1810,17 @@ Ready to experiment? Encode your own sentences—observe which cluster by meanin
 - **Precision/Recall:** Metrics evaluating search quality
 
 What's next? Start with my foundational series:
-[Transformers and the AI Revolution: The Role of Hugging Face (Article 1)](https://medium.com/@richardhightower/transformers-and-the-ai-revolution-the-role-of-hugging-face), 
-[Why Language Is Hard for AI—and How Transformers Changed Everything (Article 2)](https://medium.com/@richardhightower/why-language-is-hard-for-ai-and-how-transformers-changed-everything-jul-2-2025), 
-and build up to [Mastering Custom Pipelines: Advanced Data Processing for Production-Ready AI (Article 8)](https://medium.com/@richardhightower/mastering-custom-pipelines-advanced-data-processing-for-production-ready-ai-8d6e5ece9f2a) for data prep essentials. 
-Article 10 teaches fine-tuning transformers for your domain. Upcoming articles explore deployment, hybrid retrieval, and continuous improvement through user feedback.
+
+Be sure to check out the first seven articles in this series:
+
+1. [Hugging Faces Transformers and the AI Revolution (Article 1)](https://medium.com/@richardhightower/transformers-and-the-ai-revolution-the-role-of-hugging-face-f185f574b91b)
+2. [Hugging Faces: Why Language is Hard for AI? How Transformers Changed that (Article 2)](https://medium.com/@richardhightower/why-language-is-hard-for-ai-and-how-transformers-changed-everything-d8a1fa299f1e)
+3. [Hands-On with Hugging Face: Building Your AI Workspace (Article 3)](https://medium.com/@richardhightower/hands-on-with-hugging-face-building-your-ai-workspace-b23c7e9be3a7)
+4. [Inside the Transformer: Architecture and Attention Demystified (Article 4)](https://medium.com/@richardhightower/inside-the-transformer-architecture-and-attention-demystified-39b2c13130bd)
+5. [Tokenization: The Gateway to Transformer Understanding (Article 5)](https://medium.com/@richardhightower/tokenization-the-gateway-to-transformer-understanding-f5d4c7ac7a18)
+6. [Prompt Engineering](https://medium.com/@richardhightower/prompt-engineering-fundamentals-unlocking-the-power-of-llms-367e35d2adaf) (Article 6)
+7. [Extending Transformers Beyond Language](https://medium.com/@richardhightower/introduction-extending-transformers-beyond-language-c1f3daa92652) (Article 7)
+8. [Customizing Pipelines and Data Workflows: Advanced Models and Efficient Processing](https://medium.com/@richardhightower/customizing-pipelines-and-data-workflows-advanced-models-and-efficient-processing-1ba9fabdca9a) (Article 8)
 
 Master semantic search and modern approaches—build AI applications that truly understand users. Let's continue!
 
@@ -1505,53 +1828,206 @@ Master semantic search and modern approaches—build AI applications that truly 
 
 Dive deeper into related topics from my series and blog:
 
-- Medium Series: [Beyond Language: Transformers for Vision, Audio, and Multimodal AI—Article 7](https://medium.com/@richardhightower/beyond-language-transformers-for-vision-audio-and-multimodal-ai-article-7-jul-13-2025) – Extend semantic search to multimodal data.
-- [The Economics of Deploying Large Language Models: Costs, Value, and 99.7% Savings](https://medium.com/@richardhightower/the-economics-of-deploying-large-language-models-costs-value-and-99-7-savings-jul-3-2025) – Optimize semantic systems for enterprise scale.
+- Medium Series: [Beyond Language: Transformers for Vision, Audio, and Multimodal AI—Article 7](https://medium.com/@richardhightower/beyond-language-transformers-for-vision-audio-and-multimodal-ai-article-7-14f92d6156bc) – Extend semantic search to multimodal data.
+- [The Economics of Deploying Large Language Models: Costs, Value, and 99.7% Savings](https://medium.com/@richardhightower/the-economics-of-deploying-large-language-models-costs-value-and-99-7-savings-d1cd9a84fcbe) – Optimize semantic systems for enterprise scale.
 - Blog Insights: [Revolutionizing AI Reasoning: How Reinforcement Learning and GRPO Transform LLMs](https://cloudurable.com/blog/building-reasoning-models-reinforceme/) – Enhance search with advanced reasoning.
 - [Building Custom Language Models: From Raw Data to AI Solutions](https://cloudurable.com/blog/dataset-curation-and-training-languag/) – Curate data for better embeddings.
 - [Words as Code: How Prompt Engineering Is Reshaping AI's Business Impact](https://cloudurable.com/blog/prompt-engineering-the-multibillion-dollar-skill-g/) – Query optimization for semantic systems.
 
 ## Hands-On Resources
 
-For hands-on code, check the companion GitHub repo (as in my Article 8 examples). For more tutorials, visit my blog's AI series starting with [Article 6 - Prompt Engineering Fundamentals: Unlocking the Power of LLMs](https://cloudurable.com/blog/prompt-engineering-fundamentals-unlock/).
+**Key Hands-On Resources for Practice**
+
+Reinforce your learning with these practical resources designed to help you implement semantic search concepts:
+
+For hands-on code, check the companion [GitHub repo](https://github.com/RichardHightower/art_hug_09), let’s follow along to load up the example and run them.
+
+**Semantic Search and Information Retrieval with Transformers**
+
+This github repo contains working examples for article 09 of the Hugging Face Transformers article series, with enhanced examples demonstrating cutting-edge semantic search techniques.
+
+**Overview**
+
+Learn how to implement and understand:
+
+- **Embedding Generation**: Create semantic embeddings with multiple models (local and API-based)
+- **Hybrid Search**: Combine keyword (BM25) and semantic search for optimal results
+- **Vector Databases**: Implement scalable search with FAISS and Chroma
+- **RAG Systems**: Build Retrieval-Augmented Generation pipelines
+- **Production Patterns**: Real-world deployment strategies and optimizations
+- **Model Optimization**: Quantization techniques for efficient deployment
+
+**Prerequisites**
+
+- Python 3.12 (managed via pyenv)
+- Poetry for dependency management
+- Go Task for build automation
+- API keys for any required services (see .env.example)
+
+**Setup**
+
+1. Clone this repository
+
+```python
+git clone git@github.com:RichardHightower/art_hug_09.git
+```
+
+1. Run the setup task:
+    
+    ```
+    task setup
+    ```
+    
+2. Copy `.env.example` to `.env` and configure as needed
+
+**Project Structure**
+
+```
+.
+├── src/
+│   ├── __init__.py
+│   ├── config.py              # Configuration and utilities
+│   ├── main.py                # Entry point with all examples
+│   ├── embedding_generation.py # Generate embeddings with many models
+│   ├── hybrid_search.py       # Hybrid keyword + semantic search
+│   ├── vector_db_manager.py   # FAISS and Chroma database management
+│   ├── rag_integration.py     # RAG pipeline implementation
+│   └── utils.py               # Utility functions
+├── tests/
+│   └── test_examples.py       # Unit tests
+├── docs/
+│   ├── article9.md            # Original article
+│   └── article9i.md           # Enhanced article with additional examples
+├── .env.example               # Environment template
+├── Taskfile.yml               # Task automation
+└── pyproject.toml             # Poetry configuration
+
+```
+
+**Running Examples**
+
+Run all examples:
+
+```
+task run
+```
+
+Or run individual modules:
+
+```
+task run-embeddings          # Generate embeddings with various models
+task run-hybrid              # Run hybrid search examples
+task run-vector-db           # Vector database management
+task run-rag                 # Run RAG implementation
+task run-quantization        # Run quantization examples
+
+task postgres-logs:          # View PostgreSQL logs
+task postgres-shell:         # Connect to PostgreSQL shell
+task postgres-start:         # Start PostgreSQL with pgvector extension
+task postgres-stop:          # Stop PostgreSQL container
+
+```
+
+Interactive mode:
+
+```
+python src/main.py      # Choose examples interactively
+```
+
+**Interactive Jupyter Notebook Tutorial**
+
+For a hands-on learning experience with visualizations and interactive examples:
+
+```
+task notebook           # Launch in Jupyter Notebook
+# or
+task notebook-lab       # Launch in JupyterLab
+
+# or 
+# To see FAISS Notebook and Postgres Notebook run this 
+task notebooks 
+```
+
+The notebook includes:
+
+- Interactive comparisons of keyword vs. semantic search
+- Visualizations of embeddings and similarity matrices
+- Real-time performance benchmarking
+- Hands-on exercises to build your own search systems
+- Step-by-step explanations with expected results
+
+**Available Tasks**
+
+```bash
+% task
+task: [default] task --list
+task: Available tasks for this project:
+* clean:                   Clean up generated files
+* default:                 Show available tasks
+* format:                  Format code with Black and Ruff
+* notebook:                Launch the interactive Jupyter notebook tutorial
+* notebook-lab:            Launch the tutorial in JupyterLab
+* notebooks:               Launch the interactive Jupyter notebook tutorial
+* postgres-logs:           View PostgreSQL logs
+* postgres-shell:          Connect to PostgreSQL shell
+* postgres-start:          Start PostgreSQL with pgvector extension
+* postgres-stop:           Stop PostgreSQL container
+* run:                     Run all examples
+* run-embeddings:          Run embedding generation examples
+* run-hybrid:              Run hybrid search examples
+* run-postgres-demo:       Run PostgreSQL vector database demo
+* run-quantization:        Run quantization examples
+* run-rag:                 Run RAG implementation examples
+* run-vector-db:           Run vector database examples
+* setup:                   Set up the Python environment and install dependencies
+* test:                    Run all tests
+
+```
+
+**Key Features**
+
+**1. Embedding Generation (`embedding_generation.py`)**
+
+- Compare multiple embedding models (all-MiniLM-L6-v2, all-mpnet-base-v2, E5, multilingual)
+- Benchmark performance and quality
+- Support for both local models and API-based embeddings (OpenAI)
+- Batch processing and storage optimization
+
+**2. Hybrid Search (`hybrid_search.py`)**
+
+- Combine BM25 keyword search with semantic embeddings
+- Configurable weighting between keyword and semantic components
+- Production-ready search engine implementation
+- Performance benchmarking against individual approaches
+
+**3. Vector Database Management (`vector_db_manager.py`)**
+
+- Unified interface for FAISS and Chroma
+- Support for exact and approximate search indices
+- Metadata filtering and advanced querying
+- Easy switching between local and managed deployments
+
+**4. RAG Integration (`rag_integration.py`)**
+
+- Complete RAG pipeline from retrieval to generation
+- Multi-document context handling
+- Advanced filtering and reranking
+- Performance benchmarking
+
+**Learn More**
+
+- [Hugging Face Documentation](https://huggingface.co/docs)
+- [Sentence Transformers](https://www.sbert.net/)
+- [FAISS Documentation](https://github.com/facebookresearch/faiss)
+- [ChromaDB Documentation](https://docs.trychroma.com/)
+- [Article Series by Rick Hightower](https://cloudurable.com/blog/index.html)
 
 ## Summary
 
 This chapter transformed you from keyword-matching to meaning-understanding. You explored how transformers and vector databases like FAISS enable modern information retrieval. Through hands-on examples, you built embeddings and implemented scalable search. Armed with these tools, you're ready to tackle real-world AI search challenges and advance into sophisticated transformer applications.
 
-## Exercises
-
-### Exercise 1: Compare the results of a simple keyword search versus a semantic search on a small set of FAQs. What differences do you observe in relevance?
-
-**Hint:** Use a list of question-answer pairs; try matching queries with both exact string matching and with sentence transformer embeddings + FAISS.
-
-### Exercise 2: Generate embeddings for a set of multilingual sentences using a multilingual sentence transformer. Evaluate whether similar meanings cluster together across languages.
-
-**Hint:** Use 'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2' and visualize embeddings with PCA or t-SNE.
-
-### Exercise 3: Set up a FAISS index for a collection of 1,000 short documents. Benchmark the search speed for exact and approximate (ANN) search modes.
-
-**Hint:** Use IndexFlatL2 for exact and IndexIVFFlat for approximate search; measure query times for both.
-
-### Exercise 4: Integrate FAISS with Hugging Face Datasets to perform semantic search directly on a dataset object.
-
-**Hint:** Follow the code example in the chapter; use 'add_faiss_index' and test with several queries.
-
-### Exercise 5: Design your own evaluation experiment: Given a set of queries and expected relevant documents, compute precision and recall for your semantic search system.
-
-**Hint:** Label a small test set with ground-truth matches, then compare system output to these labels to calculate metrics.
-
-### Exercise 6: Implement a basic RAG system using the code from this article and evaluate its responses against ground truth.
-
-**Hint:** Combine the semantic search examples with the RAG code snippet to build a complete retrieval-augmented generation pipeline. Test with domain-specific questions and compare to expected answers.
-
 ## About the Author
 
-Rick Hightower brings extensive enterprise experience in AI and 
-transformer technologies to his writing. With a background in building production 
-AI systems at scale, Rick focuses on practical, real-world applications of 
-cutting-edge technology. His work bridges the gap between academic research 
-and enterprise deployment, making complex AI concepts accessible to practitioners.
+Rick Hightower brings extensive enterprise experience in AI and transformer technologies to his writing. With a background in building production AI systems at scale, Rick focuses on practical, real-world applications of cutting-edge technology. His work bridges the gap between academic research and enterprise deployment, making complex AI concepts accessible to practitioners.
 
-Follow Rick on [LinkedIn](https://www.linkedin.com/in/rickhigh/) or [Medium](https://medium.com/@richardhightower) for more enterprise AI and AI insights. Explore more on my blog: [Cloudurable AI Blog](https://cloudurable.com/blog/index.html).
-
+Follow Rick on [LinkedIn](https://www.linkedin.com/in/rickhigh/) or [Medium](https://medium.com/@richardhightower) for more enterprise AI and AI insights. Explore more on his blog: [Cloudurable AI Blog](https://cloudurable.com/blog/index.html).
