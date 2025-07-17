@@ -1,0 +1,115 @@
+version: '3'
+
+vars:
+  PYTHON_VERSION: 3.12.9
+
+tasks:
+  default:
+    desc: "Show available tasks"
+    cmds:
+      - task --list
+
+  setup:
+    desc: "Set up the Python environment and install dependencies"
+    cmds:
+      - pyenv install -s {{.PYTHON_VERSION}}
+      - pyenv local {{.PYTHON_VERSION}}
+      - poetry install
+      - poetry config virtualenvs.in-project true
+      - 'echo "Setup complete! Activate with: source .venv/bin/activate"'
+
+  run:
+    desc: "Run all examples"
+    cmds:
+      - poetry run python src/main.py
+
+  run-embeddings:
+    desc: "Run embedding generation examples"
+    cmds:
+      - poetry run python src/embedding_generation.py
+
+  run-hybrid:
+    desc: "Run hybrid search examples"
+    cmds:
+      - poetry run python src/hybrid_search.py
+
+  run-vector-db:
+    desc: "Run vector database examples"
+    cmds:
+      - poetry run python src/vector_db_manager.py
+
+  run-rag:
+    desc: "Run RAG implementation examples"
+    cmds:
+      - poetry run python src/rag_integration.py
+
+  run-quantization:
+    desc: "Run quantization examples"
+    cmds:
+      - poetry run python src/quantization.py
+  
+  # PostgreSQL Vector Database Tasks
+  postgres-start:
+    desc: "Start PostgreSQL with pgvector extension"
+    cmds:
+      - docker-compose up -d postgres-vector
+      - echo "PostgreSQL with pgvector started on port ${POSTGRES_PORT:-5433}"
+      - echo "Waiting for PostgreSQL to be ready..."
+      - sleep 5
+      - echo "PostgreSQL is ready!"
+
+  postgres-stop:
+    desc: "Stop PostgreSQL container"
+    cmds:
+      - docker-compose down
+
+  postgres-logs:
+    desc: "View PostgreSQL logs"
+    cmds:
+      - docker-compose logs -f postgres-vector
+
+  postgres-shell:
+    desc: "Connect to PostgreSQL shell"
+    cmds:
+      - docker-compose exec postgres-vector psql -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-vector_demo}
+
+  run-postgres-demo:
+    desc: "Run PostgreSQL vector database demo"
+    deps: [postgres-start]
+    cmds:
+      - poetry run python src/postgres_vector_db.py
+
+  notebook:
+    desc: "Launch the interactive Jupyter notebook tutorial"
+    cmds:
+      - poetry run jupyter notebook notebooks/tutorial.ipynb
+
+  notebook-lab:
+    desc: "Launch the tutorial in JupyterLab"
+    cmds:
+      - poetry run jupyter lab notebooks/tutorial.ipynb
+
+  notebooks:
+    desc: "Launch the interactive Jupyter notebook tutorial"
+    cmds:
+      - poetry run jupyter notebook notebooks/
+
+  test:
+    desc: "Run all tests"
+    cmds:
+      - poetry run pytest tests/ -v
+
+  format:
+    desc: "Format code with Black and Ruff"
+    cmds:
+      - poetry run black src/ tests/
+      - poetry run ruff check --fix src/ tests/
+
+  clean:
+    desc: "Clean up generated files"
+    cmds:
+      - find . -type d -name "__pycache__" -exec rm -rf {} +
+      - find . -type f -name "*.pyc" -delete
+      - rm -rf .pytest_cache
+      - rm -rf .ruff_cache
+      - rm -rf .mypy_cache
